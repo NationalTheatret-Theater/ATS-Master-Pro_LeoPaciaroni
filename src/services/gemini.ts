@@ -1,7 +1,18 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import { Language, Analysis, Client, Resume, JobDescription, ExecutiveScores, AnalysisAlert, CareerRecommendation, MarketPulse } from '../types';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI(): GoogleGenAI {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("El motor de IA no ha podido inicializarse: GEMINI_API_KEY no detectada. Por favor, revisa la configuración del entorno.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 // MODEL SELECTION
 const TEXT_MODEL = "gemini-3-flash-preview";
@@ -14,7 +25,7 @@ export const geminiService = {
     const prompt = `Analiza este CV profesional o ejecutivo. Extrae estructura, experiencia, fechas, cargos, logros, skills, seniority, alcance, liderazgo, industrias, educación, idiomas, brechas, consistencia de carrera y señales de posicionamiento ejecutivo. 
     Devuelve un JSON estructurado.`;
 
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: TEXT_MODEL,
       contents: text,
       config: {
@@ -77,7 +88,7 @@ export const geminiService = {
   async parseJob(text: string, lang: Language) {
     const prompt = `Analiza este aviso laboral. Extrae cargo, seniority, requisitos, competencias, keywords ATS, años de experiencia, idiomas, conocimientos técnicos, tipo de empresa, alcance del rol y problema de negocio implícito. Clasifica requisitos en obligatorio, importante, deseable y accesorio.`;
 
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: TEXT_MODEL,
       contents: text,
       config: {
@@ -135,7 +146,7 @@ export const geminiService = {
     Resume Data: ${JSON.stringify(resumeData)}
     Job Data: ${jobData ? JSON.stringify(jobData) : 'N/A'}`;
 
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: TEXT_MODEL,
       contents: prompt,
       config: {
@@ -222,7 +233,7 @@ export const geminiService = {
           ? `Adapta este CV específicamente para este aviso laboral. Prioriza lenguaje del aviso, logros relevantes y orden estratégico sin inventar información.`
           : `Tailor this resume specifically for this job notice. Prioritize job language, relevant achievements, and strategic ordering without inventing information.`);
 
-    const response = await ai.models.generateContent({
+    const response = await getAI().models.generateContent({
       model: TEXT_MODEL,
       contents: [
         { text: `CV Original: ${resumeRaw}` },
