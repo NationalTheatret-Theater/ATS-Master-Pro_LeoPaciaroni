@@ -7,16 +7,8 @@ function getAI(): GoogleGenAI {
   if (!aiInstance) {
     const apiKey = process.env.GEMINI_API_KEY;
     
-    // Log for debugging (only key existence, not value)
-    console.log("Gemini Service: Checking API key...");
-    if (apiKey) {
-      console.log("Gemini Service: API key found in process.env (length: " + apiKey.length + ")");
-    } else {
-      console.warn("Gemini Service: API key NOT found in process.env");
-    }
-
     if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey === '') {
-      throw new Error("No se detectó la GEMINI_API_KEY. Por favor, asegúrate de que el Secret esté configurado como 'AI Studio Free Tier' en el panel lateral y luego pulsa el botón 'Restart Server' o refresca esta pestaña.");
+      throw new Error("No se detectó la llave de IA. Por favor, crea un nuevo Secret con el nombre 'LLAVE_EXPERTA' en el panel lateral, pega tu código AIza... allí, pulsa 'Restart Server' y refresca la pestaña.");
     }
     aiInstance = new GoogleGenAI({ apiKey });
   }
