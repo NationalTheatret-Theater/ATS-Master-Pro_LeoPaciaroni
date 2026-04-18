@@ -8,11 +8,16 @@ interface LinkedInInsightsProps {
   lang: Language;
 }
 
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
 export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }) => {
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
   const [copiedAbout, setCopiedAbout] = useState(false);
   const [copiedAll, setCopiedAll] = useState(false);
   const t = UI_TEXTS[lang];
+
+  const capitalizedHeadline = data.headlineSuggestion.split('|').map(p => p.trim()).map(capitalize).join(' | ');
+  const capitalizedHeadlines = data.suggestedHeadlines.map(h => h.split('|').map(p => p.trim()).map(capitalize).join(' | '));
 
   const copyToClipboard = async (text: string, index?: number) => {
     try {
@@ -71,7 +76,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
             
             <h3>Alternatives</h3>
             <ul>
-                ${data.suggestedHeadlines.map(h => `<li>${h}</li>`).join('')}
+                ${capitalizedHeadlines.map(h => `<li>${h}</li>`).join('')}
             </ul>
         </div>
 
@@ -149,11 +154,13 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
            
            <div className="bg-white/10 backdrop-blur-xl p-8 rounded-card border-2 border-white/20 flex justify-between items-center group/card hover:bg-white/20 transition-all shadow-2xl">
               <div className="flex-1">
-                 <p className="text-[10px] uppercase font-black text-indigo-300 tracking-[0.3em] mb-3">Sugerencia de Headline de Alto Impacto</p>
-                 <p className="text-2xl font-black text-white leading-tight tracking-tight">"{data.headlineSuggestion}"</p>
+                 <p className="text-[10px] uppercase font-black text-indigo-300 tracking-[0.3em] mb-3">
+                   {lang === 'en' ? 'High Impact Headline Suggestion' : 'Sugerencia de Headline de Alto Impacto'}
+                 </p>
+                 <p className="text-2xl font-black text-white leading-tight tracking-tight">"{capitalizedHeadline}"</p>
               </div>
               <button 
-                onClick={() => copyToClipboard(data.headlineSuggestion, -1)}
+                onClick={() => copyToClipboard(capitalizedHeadline, -1)}
                 className="ml-6 p-4 bg-white/20 hover:bg-white hover:text-primary rounded-2xl transition-all shadow-lg"
               >
                 {copiedIndex === -1 ? <Check size={24} /> : <Copy size={24} />}
@@ -184,7 +191,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
                     </button>
                 </div>
                 <div className="space-y-4">
-                   {data.suggestedHeadlines.map((head, i) => (
+                   {capitalizedHeadlines.map((head, i) => (
                       <div key={i} className="flex items-center justify-between p-6 bg-indigo-50/30 rounded-card border-2 border-indigo-50 hover:border-primary transition-all group">
                          <p className="text-md font-bold text-text-main leading-relaxed pr-4">{head}</p>
                          <button 
@@ -239,11 +246,11 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
             <div className="bg-white p-8 rounded-card border-2 border-indigo-50 shadow-vibrant">
                 <h3 className="flex items-center gap-3 font-black text-text-main mb-6 text-sm uppercase tracking-widest">
                     <div className="p-2 bg-indigo-50 text-primary rounded-lg"><Hash size={18}/></div>
-                    Keywords Virales
+                    {lang === 'en' ? 'Viral Keywords' : 'Keywords Virales'}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                     {data.trendingKeywords.map((k, i) => (
-                        <span key={i} className="px-4 py-2 bg-indigo-50 text-primary text-[10px] font-black rounded-pill border border-indigo-100 transition-all hover:bg-primary hover:text-white cursor-default">#{k.replace(/\s+/g, '')}</span>
+                        <span key={i} className="px-4 py-2 bg-indigo-50 text-primary text-[10px] font-black rounded-pill border border-indigo-100 transition-all hover:bg-primary hover:text-white cursor-default">#{capitalize(k).replace(/\s+/g, '')}</span>
                     ))}
                 </div>
             </div>
