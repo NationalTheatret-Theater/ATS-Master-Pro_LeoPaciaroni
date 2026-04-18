@@ -6,9 +6,17 @@ let aiInstance: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI {
   if (!aiInstance) {
     const apiKey = process.env.GEMINI_API_KEY;
+    
+    // Log for debugging (only key existence, not value)
+    console.log("Gemini Service: Checking API key...");
+    if (apiKey) {
+      console.log("Gemini Service: API key found in process.env (length: " + apiKey.length + ")");
+    } else {
+      console.warn("Gemini Service: API key NOT found in process.env");
+    }
+
     if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey === '') {
-      console.error("DEBUG: GEMINI_API_KEY is missing or invalid in process.env");
-      throw new Error("El motor de IA no ha podido inicializarse: GEMINI_API_KEY no detectada. Por favor, asegúrate de haber configurado el 'Secret' en el panel lateral y haber refrescado la pestaña.");
+      throw new Error("No se detectó la GEMINI_API_KEY. Por favor, asegúrate de que el Secret esté configurado como 'AI Studio Free Tier' en el panel lateral y luego pulsa el botón 'Restart Server' o refresca esta pestaña.");
     }
     aiInstance = new GoogleGenAI({ apiKey });
   }
