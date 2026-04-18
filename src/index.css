@@ -1,24 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400&family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --color-primary: #4F46E5;
-  --color-secondary: #F43F5E;
-  --color-accent: #10B981;
-  --color-app-bg: #F0F2FF;
-  --color-card: #FFFFFF;
-  --color-text-main: #1E293B;
-  --color-text-muted: #64748B;
+  --font-sans: "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Cormorant Garamond", "Playfair Display", serif;
   
-  --radius-pill: 100px;
-  --radius-card: 24px;
-  --radius-container: 32px;
-  
-  --shadow-vibrant: 0 20px 50px rgba(79, 70, 229, 0.1);
+  --color-executive-navy: #1a2a44;
+  --color-executive-gold: #c5a059;
+  --color-executive-paper: #f9f7f4;
+  --color-executive-slate: #4a5568;
 }
 
 @layer base {
   body {
-    @apply bg-app-bg text-text-main antialiased;
-    font-family: 'Inter', system-ui, sans-serif;
+    @apply bg-executive-paper text-executive-navy font-sans antialiased;
   }
+  
+  h1, h2, h3, h4 {
+    @apply font-serif;
+  }
+}
+
+.executive-card {
+  @apply bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden;
+}
+
+.luxury-button {
+  @apply inline-flex items-center justify-center px-6 py-2.5 rounded-full bg-executive-navy text-white font-medium transition-all hover:bg-slate-800 active:scale-95 disabled:opacity-50 disabled:pointer-events-none;
+}
+
+.luxury-button-outline {
+  @apply inline-flex items-center justify-center px-6 py-2.5 rounded-full border-2 border-executive-navy text-executive-navy font-medium transition-all hover:bg-executive-navy hover:text-white active:scale-95 disabled:opacity-50;
+}
+
+.glass-panel {
+  @apply bg-white/70 backdrop-blur-md border border-white/20 shadow-xl;
+}
+
+/* Custom scrollbar for premium feel */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-200 rounded-full hover:bg-slate-300;
 }

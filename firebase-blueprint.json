@@ -1,0 +1,104 @@
+{
+  "entities": {
+    "Client": {
+      "title": "Executive Client",
+      "description": "Information about a candidate or executive being managed.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "fullName": { "type": "string" },
+        "email": { "type": "string", "format": "email" },
+        "phone": { "type": "string" },
+        "targetRole": { "type": "string" },
+        "targetIndustry": { "type": "string" },
+        "targetCountry": { "type": "string" },
+        "targetSeniority": { "type": "string", "enum": ["Junior", "Professional", "Lead", "Manager", "Director", "VP", "C-Level"] },
+        "notes": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["fullName", "email"]
+    },
+    "Resume": {
+      "title": "Executive Resume",
+      "description": "Original or optimized resume document.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "fileName": { "type": "string" },
+        "fileType": { "type": "string", "enum": ["pdf", "docx", "txt"] },
+        "rawText": { "type": "string" },
+        "parsedJson": { "type": "object" },
+        "language": { "type": "string", "enum": ["es", "en"] },
+        "versionName": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "rawText"]
+    },
+    "JobDescription": {
+      "title": "Job Specification",
+      "description": "Target job posting for matching.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "title": { "type": "string" },
+        "companyName": { "type": "string" },
+        "rawText": { "type": "string" },
+        "parsedJson": { "type": "object" },
+        "language": { "type": "string", "enum": ["es", "en"] },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "rawText"]
+    },
+    "Analysis": {
+      "title": "ATS Analysis Report",
+      "description": "Detailed multi-dimensional analysis report.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "clientId": { "type": "string" },
+        "resumeId": { "type": "string" },
+        "jobDescriptionId": { "type": "string" },
+        "analysisName": { "type": "string" },
+        "scores": {
+          "type": "object",
+          "properties": {
+            "parsing": { "type": "number" },
+            "ats": { "type": "number" },
+            "jobMatch": { "type": "number" },
+            "executive": { "type": "number" },
+            "transferability": { "type": "number" }
+          }
+        },
+        "strengths": { "type": "array", "items": { "type": "string" } },
+        "gaps": { "type": "array", "items": { "type": "string" } },
+        "alerts": { "type": "array", "items": { "type": "object" } },
+        "recommendations": { "type": "array", "items": { "type": "object" } },
+        "marketPulse": { "type": "object" },
+        "benchmark": { "type": "object" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["clientId", "resumeId", "scores"]
+    }
+  },
+  "firestore": {
+    "/clients/{clientId}": {
+      "schema": "Client",
+      "description": "Manage individual executive clients."
+    },
+    "/clients/{clientId}/resumes/{resumeId}": {
+      "schema": "Resume",
+      "description": "Resumes associated with a client."
+    },
+    "/clients/{clientId}/jobs/{jobId}": {
+      "schema": "JobDescription",
+      "description": "Job descriptions analyzed for a client."
+    },
+    "/clients/{clientId}/analyses/{analysisId}": {
+      "schema": "Analysis",
+      "description": "Historical analyses for a client."
+    }
+  }
+}

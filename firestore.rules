@@ -1,0 +1,74 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Catch-all deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Entity Validations
+    function isValidClient(data) {
+      return data.keys().hasAll(['fullName', 'email', 'ownerId']) 
+        && data.fullName is string && data.fullName.size() <= 200
+        && data.email is string && data.email.size() <= 200
+        && data.ownerId == request.auth.uid;
+    }
+
+    function isValidResume(data) {
+      return data.keys().hasAll(['clientId', 'rawText', 'ownerId'])
+        && data.clientId is string && data.clientId.size() <= 128
+        && data.rawText is string && data.rawText.size() <= 1000000
+        && data.ownerId == request.auth.uid;
+    }
+
+    function isValidAnalysis(data) {
+      return data.keys().hasAll(['clientId', 'resumeId', 'scores', 'ownerId'])
+        && data.scores is map
+        && data.ownerId == request.auth.uid;
+    }
+
+    // Paths
+    match /clients/{clientId} {
+      allow get: if isSignedIn() && (existing().ownerId == request.auth.uid);
+      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid);
+      allow create: if isSignedIn() && isValidId(clientId) && isValidClient(incoming());
+      allow update: if isSignedIn() && (existing().ownerId == request.auth.uid) 
+        && isValidClient(incoming()) 
+        && incoming().ownerId == existing().ownerId;
+      allow delete: if isSignedIn() && (existing().ownerId == request.auth.uid);
+
+      // Sub-collections inherit owner check via parent lookup or redundant field
+      match /resumes/{resumeId} {
+        allow read: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
+        allow write: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid) && isValidResume(incoming());
+      }
+
+      match /jobs/{jobId} {
+        allow read: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
+        allow write: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
+      }
+
+      match /analyses/{analysisId} {
+        allow read: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
+        allow write: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid) && isValidAnalysis(incoming());
+      }
+    }
+  }
+}
