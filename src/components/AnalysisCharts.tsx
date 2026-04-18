@@ -1,9 +1,10 @@
 import React from 'react';
 import { RadialBarChart, RadialBar, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
-import { ATSAnalysis, CareerMatch } from '../types';
-import { Zap, TrendingUp, Users } from 'lucide-react';
+import { ATSAnalysis, CareerMatch, Language } from '../types';
+import { Zap, TrendingUp } from 'lucide-react';
+import { UI_TEXTS } from '../constants';
 
-export const ScoreGauge: React.FC<{ score: number; label?: string; color?: string }> = ({ score, label = "Puntaje ATS", color }) => {
+export const ScoreGauge: React.FC<{ score: number; label?: string; color?: string }> = ({ score, label, color }) => {
   const defaultBg = '#f1f5f9';
   const defaultColor = score > 80 ? '#10B981' : score > 50 ? '#4F46E5' : '#F43F5E';
   
@@ -29,7 +30,8 @@ export const ScoreGauge: React.FC<{ score: number; label?: string; color?: strin
   );
 };
 
-export const CategoryBreakdown: React.FC<{ data: ATSAnalysis }> = ({ data }) => {
+export const CategoryBreakdown: React.FC<{ data: ATSAnalysis; lang: Language }> = ({ data, lang }) => {
+  const t = UI_TEXTS[lang];
   const keywordTotal = (data.foundKeywords?.length || 0) + (data.missingKeywords?.length || 0);
   const keywordScore = typeof data.keywordMatch === 'number'
     ? data.keywordMatch
@@ -38,10 +40,10 @@ export const CategoryBreakdown: React.FC<{ data: ATSAnalysis }> = ({ data }) => 
       : data.overallScore;
 
   const chartData = [
-    { name: 'Keywords', score: keywordScore },
-    { name: 'Contexto', score: data.contextualMatch },
-    { name: 'Impacto', score: data.impactScore },
-    { name: 'Ajuste Cult.', score: data.culturalFit },
+    { name: lang === 'en' ? 'Keywords' : 'Palabras Clave', score: keywordScore },
+    { name: t.context, score: data.contextualMatch },
+    { name: t.impact, score: data.impactScore },
+    { name: t.culturalFit, score: data.culturalFit },
   ];
 
   return (
@@ -60,19 +62,20 @@ export const CategoryBreakdown: React.FC<{ data: ATSAnalysis }> = ({ data }) => 
   );
 };
 
-export const PredictiveCard: React.FC<{ analysis: ATSAnalysis }> = ({ analysis }) => {
+export const PredictiveCard: React.FC<{ analysis: ATSAnalysis; lang: Language }> = ({ analysis, lang }) => {
+  const t = UI_TEXTS[lang];
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
       <div className="bg-indigo-50/50 p-6 rounded-card border-2 border-primary/10 shadow-sm group hover:scale-[1.02] transition-transform">
         <div className="flex items-center gap-3 mb-3 text-primary font-black text-xs uppercase tracking-widest">
-          <TrendingUp size={18} /> Éxito Laboral Estimado
+          <TrendingUp size={18} /> {t.estimatedSuccess}
         </div>
         <div className="text-4xl font-black text-primary tracking-tighter">{analysis.successPrediction}<span className="text-xl">%</span></div>
         <p className="text-[10px] text-text-muted mt-2 uppercase font-black tracking-[0.2em]">Neural Score Accuracy: 94%</p>
       </div>
       <div className="bg-secondary/5 p-6 rounded-card border-2 border-secondary/10 shadow-sm group hover:scale-[1.02] transition-transform">
         <div className="flex items-center gap-3 mb-3 text-secondary font-black text-xs uppercase tracking-widest">
-          <Zap size={18} /> Impacto Proyectado
+          <Zap size={18} /> {t.projectedImpact}
         </div>
         <p className="text-sm text-text-main leading-relaxed font-bold italic group-hover:text-secondary transition-colors">"{analysis.performanceEstimate}"</p>
       </div>

@@ -146,7 +146,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
                   onClick={handleExportWord}
                   className="flex items-center gap-2 px-6 py-3 bg-white/20 hover:bg-white/30 rounded-pill text-xs font-black uppercase tracking-widest transition-all backdrop-blur-md shadow-lg"
                >
-                  <FileText size={18} /> {lang === 'es' ? 'Exportar Word' : 'Export Word'}
+                  <FileText size={18} /> {t.exportWord}
                </button>
            </div>
            
@@ -155,7 +155,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
            <div className="bg-white/10 backdrop-blur-xl p-8 rounded-card border-2 border-white/20 flex justify-between items-center group/card hover:bg-white/20 transition-all shadow-2xl">
               <div className="flex-1">
                  <p className="text-[10px] uppercase font-black text-indigo-300 tracking-[0.3em] mb-3">
-                   {lang === 'en' ? 'High Impact Headline Suggestion' : 'Sugerencia de Headline de Alto Impacto'}
+                   {t.highImpact}
                  </p>
                  <p className="text-2xl font-black text-white leading-tight tracking-tight">"{capitalizedHeadline}"</p>
               </div>
@@ -259,7 +259,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
             <div className="bg-accent/5 p-8 rounded-card border-2 border-accent/10">
                 <h3 className="flex items-center gap-3 font-black text-accent mb-6 text-sm uppercase tracking-widest">
                     <div className="p-2 bg-white text-accent rounded-xl shadow-sm"><TrendingUp size={18}/></div>
-                    Market pulse
+                    {t.marketPulse}
                 </h3>
                 <p className="text-sm text-text-main leading-relaxed font-bold italic">"{data.hiringTrends}"</p>
             </div>
@@ -268,7 +268,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
             <div className="bg-primary/5 p-8 rounded-card border-2 border-primary/10">
                 <h3 className="flex items-center gap-3 font-black text-primary mb-6 text-sm uppercase tracking-widest">
                     <div className="p-2 bg-white text-primary rounded-xl shadow-sm"><Users size={18}/></div>
-                    Networking Strategy
+                    {t.networkingStrategy}
                 </h3>
                 <ul className="space-y-4">
                     {data.suggestedConnections.map((c, i) => (
@@ -286,7 +286,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
             <div className="bg-white p-8 rounded-card border-2 border-indigo-50 shadow-vibrant">
                 <h3 className="flex items-center gap-3 font-black text-text-main mb-6 text-sm uppercase tracking-widest">
                     <div className="p-2 bg-indigo-50 text-primary rounded-xl"><PenTool size={18}/></div>
-                    Content Ideas
+                    {t.contentIdeas}
                 </h3>
                 <div className="space-y-4">
                     {data.contentIdeas.slice(0, 3).map((idea, i) => (
@@ -301,7 +301,7 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
             <div className="bg-secondary/5 p-8 rounded-card border-2 border-secondary/10">
                 <h3 className="flex items-center gap-3 font-black text-secondary mb-6 text-sm uppercase tracking-widest">
                     <div className="p-2 bg-white text-secondary rounded-xl shadow-sm"><Zap size={18}/></div>
-                    Trending Skills
+                    {t.trendingSkills}
                 </h3>
                 <div className="flex flex-wrap gap-2">
                     {data.skillGapsForMarket.map((skill, i) => (

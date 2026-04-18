@@ -175,12 +175,11 @@ const actionVerbCount = (text: string) => {
   return ACTION_VERBS.filter((verb) => normalized.includes(normalize(verb))).length;
 };
 
-const buildSectionBreakdown = (text: string, keywordScore: KeywordScore) => {
+const buildSectionBreakdown = (text: string, keywordScore: KeywordScore, lang: Language) => {
   const detected = countSections(text);
-  const totalWeight = SECTION_PATTERNS.length - 2; // Allow skipping 2 minor sections for a perfect score
+  const totalWeight = SECTION_PATTERNS.length - 2; 
   const sectionsScore = clamp((detected / totalWeight) * 100);
   
-  // Advanced metric detection including date ranges
   const metrics = metricCount(text);
   const datePatterns = /\d{4} ?- ?\d{4}|\d{4} ?- ?present|actualidad|presente/gi;
   const hasDates = datePatterns.test(text);
@@ -191,54 +190,54 @@ const buildSectionBreakdown = (text: string, keywordScore: KeywordScore) => {
 
   return [
     {
-      category: "Estructura ATS",
+      category: lang === 'en' ? "ATS Structure" : "Estructura ATS",
       score: sectionsScore,
       feedback: sectionsScore > 75
-        ? "Arquitectura de documento compatible con motores de búsqueda por secciones."
-        : "Se recomienda usar encabezados estándar: Experiencia, Educación, Habilidades.",
+        ? (lang === 'en' ? "Document architecture compatible with semantic search engines." : "Arquitectura de documento compatible con motores de búsqueda por secciones.")
+        : (lang === 'en' ? "Standard headers missing: Experience, Education, Skills." : "Se recomienda usar encabezados estándar: Experiencia, Educación, Habilidades."),
       status: structureStatus,
     },
     {
-      category: "Keywords",
+      category: lang === 'en' ? "Keyword Density" : "Densidad de Keywords",
       score: keywordScore.score,
       feedback: keywordScore.found.length
-        ? `Se detectaron ${keywordScore.found.length} conexiones semánticas clave.`
-        : "Faltan términos técnicos que validen tu experiencia en el sector objetivo.",
+        ? (lang === 'en' ? `Detected ${keywordScore.found.length} core semantic connections.` : `Se detectaron ${keywordScore.found.length} conexiones semánticas clave.`)
+        : (lang === 'en' ? "Technical terms missing to validate target industry expertise." : "Faltan términos técnicos que validen tu experiencia en el sector objetivo."),
       status: keywordScore.score > 75 ? "Excellent" as const : keywordScore.score > 55 ? "Good" as const : keywordScore.score > 35 ? "Improvement" as const : "Critical" as const,
     },
     {
-      category: "Impacto cuantificado",
+      category: lang === 'en' ? "Impact Proof" : "Evidencia de Impacto",
       score: impactScore,
       feedback: metrics > 4
-        ? "Excelente uso de datos probatorios. Tu perfil proyecta resultados concretos."
-        : "Agrega números: presupuestos, % de mejora, ahorro de tiempo o volumen de ventas.",
+        ? (lang === 'en' ? "Strong use of evidence-based data. Profile projects clear ROI." : "Excelente uso de datos probatorios. Tu perfil proyecta resultados concretos.")
+        : (lang === 'en' ? "Add numbers: budgets, % growth, time saved, or sales volume." : "Agrega números: presupuestos, % de mejora, ahorro de tiempo o volumen de ventas."),
       status: impactScore > 80 ? "Excellent" as const : impactScore > 60 ? "Good" as const : "Improvement" as const,
     },
     {
-      category: "Claridad",
+      category: lang === 'en' ? "Readability" : "Legibilidad",
       score: readabilityScore,
       feedback: readabilityScore > 80
-        ? "Densidad de texto óptima para una lectura de 6 segundos."
-        : "Documento demasiado denso o verboso. Prioriza logros concisos sobre tareas.",
+        ? (lang === 'en' ? "Optimal text density for a high-speed initial screen." : "Densidad de texto óptima para una lectura de 6 segundos.")
+        : (lang === 'en' ? "Document too dense. Prioritize concise achievements over task lists." : "Documento demasiado denso o verboso. Prioriza logros concisos sobre tareas."),
       status: readabilityScore > 80 ? "Excellent" as const : readabilityScore > 60 ? "Good" as const : "Improvement" as const,
     },
   ];
 };
 
-const buildCareerMatches = (text: string) => {
+const buildCareerMatches = (text: string, lang: Language) => {
   const normalized = normalize(text);
 
   return ROLE_KEYWORDS.map((role) => {
     const found = role.keywords.filter((keyword) => normalized.includes(normalize(keyword)));
-    const matchPercentage = clamp(45 + (found.length / role.keywords.length) * 50);
+    const matchPercentage = clamp(40 + (found.length / role.keywords.length) * 60);
 
     return {
       role: role.role,
       industry: role.industry,
       matchPercentage,
-      gapAnalysis: found.length
-        ? `Base fuerte en ${found.slice(0, 4).join(", ")}.`
-        : `Refuerza keywords como ${role.keywords.slice(0, 4).join(", ")}.`,
+      gapAnalysis: found.length >= role.keywords.length / 2
+        ? (lang === 'en' ? `Strong foundation in ${found.slice(0, 4).join(", ")}.` : `Base sólida en ${found.slice(0, 4).join(", ")}.`)
+        : (lang === 'en' ? `Optimize for ${role.keywords.filter(k => !found.includes(k)).slice(0, 3).join(", ")}.` : `Optimizar para ${role.keywords.filter(k => !found.includes(k)).slice(0, 3).join(", ")}.`),
     };
   }).sort((a, b) => b.matchPercentage - a.matchPercentage);
 };
@@ -256,51 +255,56 @@ const toMarkdownCV = (cvText: string, analysis: ATSAnalysis, lang: Language) => 
     .replace(/\r/g, "")
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-  const topKeywords = unique([...analysis.foundKeywords, ...getTopTerms(clean, 8)]).slice(0, 10);
-  const missing = analysis.missingKeywords.slice(0, 6);
+  const topKeywords = unique([...analysis.foundKeywords, ...getTopTerms(clean, 12)]).slice(0, 15);
+  const missing = analysis.missingKeywords.slice(0, 8);
 
-  const title = lang === "en" ? "Optimized Professional Profile" : "Perfil Profesional Optimizado";
-  const sectionSummary = lang === "en" ? "PROFESSIONAL SUMMARY" : "RESUMEN PROFESIONAL";
-  const sectionCore = lang === "en" ? "TECHNICAL CORE & KEYWORDS" : "NÚCLEO TÉCNICO Y PALABRAS CLAVE";
-  const sectionExperience = lang === "en" ? "REFINED EXPERIENCE" : "EXPERIENCIA REFINADA";
-  const sectionGuidance = lang === "en" ? "STRATEGIC OPTIMIZATIONS" : "OPTIMIZACIONES ESTRATÉGICAS";
+  const title = lang === "en" ? "Refined Professional CV" : "CV Profesional Refinado";
+  const sectionSummary = lang === "en" ? "PROFESSIONAL PROFILE" : "PERFIL PROFESIONAL";
+  const sectionExperience = lang === "en" ? "PROFESSIONAL EXPERIENCE" : "EXPERIENCIA PROFESIONAL";
+  const sectionSkills = lang === "en" ? "TECHNICAL SKILLS & COMPETENCIES" : "HABILIDADES TÉCNICAS Y COMPETENCIAS";
+  const sectionDirectives = lang === "en" ? "TARGET OPTIMIZATIONS" : "OPTIMIZACIONES OBJETIVO";
 
   const summary = lang === "en"
-    ? "High-impact professional profile structured for ATS readability and keyword density. Focused on measurable business outcomes and scalable infrastructure."
-    : "Perfil profesional de alto impacto estructurado para legibilidad ATS y densidad de palabras clave. Enfocado en resultados de negocio medibles e infraestructura escalable.";
+    ? "Strategic professional profile optimized for modern ATS filters. Focuses on leadership, technical architecture, and quantifiable business outcomes."
+    : "Perfil profesional estratégico optimizado para filtros ATS modernos. Enfocado en liderazgo, arquitectura técnica y resultados de negocio cuantificables.";
 
   return `# ${title.toUpperCase()}
-
+  
 ## ${sectionSummary}
 ${summary}
-
-## ${sectionCore}
-${topKeywords.map((keyword) => `- ${capitalize(keyword)}`).join("\n")}
 
 ## ${sectionExperience}
 ${clean}
 
-## ${sectionGuidance}
-${missing.map((keyword) => `- ${lang === 'en' ? `Integrate specific evidence for "${keyword}"` : `Integrar evidencia específica para "${keyword}"`}.`).join("\n")}
-- ${lang === "en" ? "Quantify achievements using specific metrics (%, $, volume)." : "Cuantificar logros usando métricas específicas (%, $, volumen)."}
+## ${sectionSkills}
+${topKeywords.map((keyword) => `- ${capitalize(keyword)}`).join("\n")}
+
+## ${sectionDirectives}
+${missing.map((keyword) => `- ${lang === 'en' ? `Deepen evidence for "${keyword}"` : `Profundizar evidencia para "${keyword}"`}.`).join("\n")}
+- ${lang === "en" ? "Incorporate industry-standard metrics (Efficiency gains, ROI, Growth %)." : "Incorporar métricas estándar de industria (Ganancias en eficiencia, ROI, % de crecimiento)."}
 `;
 };
 
 export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnalysis> => {
   const keywordScore = scoreKeywords(cvText);
-  const sectionBreakdown = buildSectionBreakdown(cvText, keywordScore);
+  const sectionBreakdown = buildSectionBreakdown(cvText, keywordScore, lang);
   const sectionAverage = sectionBreakdown.reduce((sum, item) => sum + item.score, 0) / sectionBreakdown.length;
-  const impactScore = sectionBreakdown.find((item) => item.category === "Impacto cuantificado")?.score || 0;
   
-  // World-class ATS weighting: Structure (40%), Keywords (40%), Impact/Metrics (20%)
+  const impactLabel = lang === 'en' ? "Impact Proof" : "Evidencia de Impacto";
+  const structureLabel = lang === 'en' ? "ATS Structure" : "Estructura ATS";
+  
+  const impactScore = sectionBreakdown.find((item) => item.category === impactLabel)?.score || 0;
+  
+  // World-class ATS weighting: Keywords (45%), Impact/Metrics (35%), Structure (20%)
   const overallScore = clamp(
-    sectionBreakdown.find(b => b.category === "Estructura ATS")!.score * 0.4 +
-    keywordScore.score * 0.4 +
-    impactScore * 0.2
+    keywordScore.score * 0.45 +
+    impactScore * 0.35 +
+    sectionBreakdown.find(b => b.category === structureLabel)!.score * 0.20
   );
 
-  const culturalFit = clamp(50 + SOFT_SKILLS.filter((skill) => normalize(cvText).includes(normalize(skill))).length * 7);
-  const successPrediction = clamp(overallScore * 0.75 + culturalFit * 0.25);
+  const softSkillsFound = SOFT_SKILLS.filter((skill) => normalize(cvText).includes(normalize(skill)));
+  const culturalFit = clamp(40 + softSkillsFound.length * 12);
+  const successPrediction = clamp(overallScore * 0.70 + culturalFit * 0.30);
   const hasContact = /@|linkedin\.com|github\.com|\+\d|phone|telefono/i.test(cvText);
 
   return {
@@ -308,39 +312,39 @@ export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnal
     keywordMatch: keywordScore.score,
     sectionBreakdown,
     vocationalProfile: {
-      estimatedSeniority: cvText.length > 5000 || metricCount(cvText) > 6 
-        ? (lang === 'en' ? "Senior / Lead" : "Senior / Líder") 
-        : cvText.length > 2200 
-          ? (lang === 'en' ? "Mid-level" : "Nivel Medio") 
-          : (lang === 'en' ? "Junior / Emerging" : "Junior / Emergente"),
-      marketValueScore: clamp(overallScore * 0.65 + keywordScore.found.length * 2.5),
+      estimatedSeniority: cvText.length > 5000 || metricCount(cvText) > 8 
+        ? (lang === 'en' ? "Senior / Strategic Leader" : "Senior / Líder Estratégico") 
+        : cvText.length > 2500 
+          ? (lang === 'en' ? "Mid-level / Professional" : "Nivel Medio / Profesional") 
+          : (lang === 'en' ? "Junior / Specialist" : "Junior / Especialista"),
+      marketValueScore: clamp(overallScore * 0.7 + keywordScore.found.length * 3),
       salaryRangeEstimation: lang === "en" 
-        ? "Computed based on keyword density and detected seniority." 
-        : "Calculado basado en la densidad de palabras clave y el seniority detectado.",
+        ? "Dynamic estimation based on detected competencies and quantified impact." 
+        : "Estimación dinámica basada en competencias detectadas e impacto cuantificado.",
       recommendedLearningPath: keywordScore.missing.slice(0, 5).map(capitalize),
-      topStrengths: unique([...keywordScore.found.slice(0, 5), ...getTopTerms(cvText, 3)]).slice(0, 6).map(capitalize),
+      topStrengths: unique([...keywordScore.found.slice(0, 5), ...softSkillsFound.slice(0, 3)]).slice(0, 8).map(capitalize),
     },
     impactScore,
     contextualMatch: clamp(keywordScore.score * 0.6 + sectionAverage * 0.4),
     successPrediction,
     culturalFit,
     performanceEstimate: lang === "en"
-      ? "Alignment signals: High visibility for core technical domains."
-      : "Señales de alineación: Alta visibilidad en dominios técnicos clave.",
+      ? "Alignment signals: High visibility for core technical domains and leadership soft skills."
+      : "Señales de alineación: Alta visibilidad en dominios técnicos clave y liderazgo empresarial.",
     foundKeywords: keywordScore.found,
     missingKeywords: keywordScore.missing,
     criticalIssues: [
       !hasContact ? (lang === "en" ? "Critical: Contact information (Email/Phone) missing." : "Crítico: Falta información de contacto (Email/Teléfono).") : "",
-      metricCount(cvText) < 3 ? (lang === "en" ? "Low impact: Missing quantifiable metrics in achievements." : "Bajo impacto: Faltan métricas cuantificables en los logros.") : "",
-      countSections(cvText) < 4 ? (lang === "en" ? "Structural Gap: Essential ATS sections missing." : "Brecha Estructural: Faltan secciones ATS esenciales.") : "",
+      metricCount(cvText) < 5 ? (lang === "en" ? "Low impact: Profile lacks significant quantifiable metrics (use numbers/%)" : "Bajo impacto: Perfil carece de métricas cuantificables significativas (usar números/%).") : "",
+      countSections(cvText) < 5 ? (lang === "en" ? "Structural Gap: Essential ATS headers missing or poorly labeled." : "Brecha Estructural: Faltan encabezados ATS habituales o mal etiquetados.") : "",
     ].filter(Boolean),
     improvementSuggestions: [
-      lang === "en" ? "Standardize headers to [Experience, Education, Technical Skills, Profile]." : "Estandariza encabezados a [Experiencia, Educación, Habilidades Técnicas, Perfil].",
-      lang === "en" ? "Apply the CAR (Context, Action, Result) method to all bullets." : "Aplica el método CAR (Contexto, Acción, Resultado) a cada logro.",
-      lang === "en" ? "Increase keyword density for target industry keywords." : "Aumenta la densidad de palabras clave para la industria objetivo.",
-      ...keywordScore.missing.slice(0, 3).map((keyword) => lang === "en" ? `Demonstrate expertise in ${capitalize(keyword)}.` : `Demostrar experiencia en ${capitalize(keyword)}.`),
+      lang === "en" ? "Modernize headers to [Profile, Professional Experience, Technology Stack]." : "Moderniza encabezados a [Perfil, Experiencia Profesional, Stack Tecnológico].",
+      lang === "en" ? "Use the STAR method (Situation, Task, Action, Result) for all impact statements." : "Usa el método STAR (Situación, Tarea, Acción, Resultado) para declaraciones de impacto.",
+      lang === "en" ? "Optimize keyword distribution throughout the professional summary." : "Optimiza la distribución de palabras clave en el resumen profesional.",
+      ...keywordScore.missing.slice(0, 3).map((keyword) => lang === "en" ? `Provide project context for ${capitalize(keyword)}.` : `Proveer contexto de proyecto para ${capitalize(keyword)}.`),
     ],
-    careerMatches: buildCareerMatches(cvText),
+    careerMatches: buildCareerMatches(cvText, lang),
     summary: buildSummary(cvText, overallScore, lang),
   };
 };

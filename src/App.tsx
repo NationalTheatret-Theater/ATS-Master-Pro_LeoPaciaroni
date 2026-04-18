@@ -705,7 +705,7 @@ const App: React.FC = () => {
            <p className="text-[10px] text-text-muted font-black uppercase tracking-[0.5em] opacity-40">ATS Master Pro v4.2 • Procedimiento Neural de Proyección de Carrera completado</p>
         </footer>
 
-        {analysis && <AnalysisModal isOpen={isModalOpen} onClose={()=>setIsModalOpen(false)} analysis={analysis} />}
+        {analysis && <AnalysisModal isOpen={isModalOpen} onClose={()=>setIsModalOpen(false)} analysis={analysis} lang={lang} />}
       </main>
     </div>
   );

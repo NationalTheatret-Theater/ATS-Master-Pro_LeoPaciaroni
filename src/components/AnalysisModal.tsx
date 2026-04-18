@@ -1,17 +1,20 @@
 import React from 'react';
 import { X, CheckCircle, AlertTriangle, Lightbulb, Target, ShieldCheck, BrainCircuit, Image } from 'lucide-react';
-import { ATSAnalysis } from '../types';
+import { ATSAnalysis, Language } from '../types';
 import { ScoreGauge, CategoryBreakdown, CareerMatchList, PredictiveCard } from './AnalysisCharts';
+import { UI_TEXTS } from '../constants';
 import html2canvas from 'html2canvas';
 
 interface AnalysisModalProps {
   isOpen: boolean;
   onClose: () => void;
   analysis: ATSAnalysis;
+  lang: Language;
 }
 
-export const AnalysisModal: React.FC<AnalysisModalProps> = ({ isOpen, onClose, analysis }) => {
+export const AnalysisModal: React.FC<AnalysisModalProps> = ({ isOpen, onClose, analysis, lang }) => {
   if (!isOpen) return null;
+  const t = UI_TEXTS[lang];
 
   const handleExportPng = async () => {
     const element = document.getElementById('neural-ats-report-container');
@@ -68,17 +71,16 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ isOpen, onClose, a
           <div className="flex items-center gap-4">
              <div className="bg-primary p-3 rounded-2xl shadow-vibrant"><ShieldCheck className="text-white" size={32} /></div>
              <div>
-                <h2 className="text-2xl md:text-3xl font-black text-text-main tracking-tighter">Reporte Neural ATS</h2>
-                <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2"><BrainCircuit size={14}/> Análisis Contextual v4.2</p>
+                <h2 className="text-2xl md:text-3xl font-black text-text-main tracking-tighter">{t.neuralReport}</h2>
+                <p className="text-[10px] text-primary font-black uppercase tracking-[0.2em] flex items-center gap-2"><BrainCircuit size={14}/> {t.neuralAnalysis}</p>
              </div>
           </div>
           <div className="flex items-center gap-3">
             <button 
                 onClick={handleExportPng}
                 className="flex items-center gap-2 px-5 py-3 bg-white text-primary border-2 border-indigo-50 hover:border-primary rounded-pill text-xs font-black uppercase tracking-widest transition-all shadow-sm"
-                title="Exportar como PNG"
             >
-                <Image size={18} /> <span className="hidden sm:inline">Exportar PNG</span>
+                <Image size={18} /> <span className="hidden sm:inline">{t.exportPng}</span>
             </button>
             <button onClick={onClose} className="p-3 text-text-muted hover:bg-white hover:text-primary rounded-2xl transition-all"><X size={32} /></button>
           </div>
@@ -88,21 +90,21 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ isOpen, onClose, a
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
                 <div className="lg:col-span-4 space-y-8">
                     <div className="bg-indigo-50/30 p-8 rounded-card border-2 border-indigo-50 flex flex-col items-center shadow-vibrant hover:border-primary transition-colors">
-                        <h3 className="font-black text-text-muted mb-6 text-xs uppercase tracking-[0.2em]">Ajuste General</h3>
-                        <ScoreGauge score={analysis.overallScore} />
-                        <PredictiveCard analysis={analysis} />
+                        <h3 className="font-black text-text-muted mb-6 text-xs uppercase tracking-[0.2em]">{lang === 'en' ? 'Overall Alignment' : 'Ajuste General'}</h3>
+                        <ScoreGauge score={analysis.overallScore} label={t.atsScore} />
+                        <PredictiveCard analysis={analysis} lang={lang} />
                     </div>
                 </div>
                 
                 <div className="lg:col-span-8 space-y-8">
                     <div className="bg-white p-8 rounded-card border-2 border-indigo-50 shadow-vibrant">
-                        <h3 className="font-black text-text-muted mb-6 text-xs uppercase tracking-[0.2em]">Métricas de Relevancia Semántica</h3>
-                        <CategoryBreakdown data={analysis} />
+                        <h3 className="font-black text-text-muted mb-6 text-xs uppercase tracking-[0.2em]">{t.sectionScore}</h3>
+                        <CategoryBreakdown data={analysis} lang={lang} />
                     </div>
                     
                     <div className="bg-primary/5 p-8 rounded-card border-2 border-primary/10 relative overflow-hidden group">
                          <div className="absolute top-0 right-0 w-2 h-full bg-primary/20 group-hover:bg-primary transition-colors"></div>
-                         <h3 className="font-black text-primary mb-4 flex items-center gap-3 text-lg tracking-tight"><Target size={24}/> Resumen Estratégico</h3>
+                         <h3 className="font-black text-primary mb-4 flex items-center gap-3 text-lg tracking-tight"><Target size={24}/> {t.strategicSummary}</h3>
                          <p className="text-md leading-relaxed text-text-main font-bold italic group-hover:text-primary transition-colors">"{analysis.summary}"</p>
                     </div>
                 </div>
@@ -110,7 +112,7 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ isOpen, onClose, a
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
                 <div className="space-y-6">
-                     <h3 className="font-black text-text-main flex items-center gap-3 text-lg uppercase tracking-wider border-b-2 border-amber-100 pb-3"><Lightbulb size={24} className="text-amber-500"/> Sugerencias de Optimización</h3>
+                     <h3 className="font-black text-text-main flex items-center gap-3 text-lg uppercase tracking-wider border-b-2 border-amber-100 pb-3"><Lightbulb size={24} className="text-amber-500"/> {t.optSuggestions}</h3>
                      <ul className="space-y-3">
                         {analysis.improvementSuggestions.map((s,i)=>(
                             <li key={i} className="text-sm text-text-main bg-amber-50/50 hover:bg-amber-100 p-4 rounded-xl border border-amber-100 transition-all flex gap-4 shadow-sm">
@@ -121,7 +123,7 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ isOpen, onClose, a
                      </ul>
                 </div>
                 <div className="space-y-6">
-                     <h3 className="font-black text-text-main flex items-center gap-3 text-lg uppercase tracking-wider border-b-2 border-secondary/20 pb-3"><AlertTriangle size={24} className="text-secondary"/> Puntos Críticos Detectados</h3>
+                     <h3 className="font-black text-text-main flex items-center gap-3 text-lg uppercase tracking-wider border-b-2 border-secondary/20 pb-3"><AlertTriangle size={24} className="text-secondary"/> {t.critIssues}</h3>
                      <ul className="space-y-3">
                         {analysis.criticalIssues.map((s,i)=>(
                             <li key={i} className="text-sm text-text-main bg-secondary/5 p-4 rounded-xl border border-secondary/10 flex gap-4 shadow-sm hover:bg-secondary/10 transition-colors">
@@ -136,13 +138,13 @@ export const AnalysisModal: React.FC<AnalysisModalProps> = ({ isOpen, onClose, a
             </div>
 
             <div className="pt-8 border-t-2 border-indigo-50">
-                 <h3 className="font-black text-text-main mb-8 flex items-center gap-3 text-lg uppercase tracking-wider"><Target size={24} className="text-primary"/> Calce Dimensional con Mercados y Roles</h3>
+                 <h3 className="font-black text-text-main mb-8 flex items-center gap-3 text-lg uppercase tracking-wider"><Target size={24} className="text-primary"/> {t.dimensionalFit}</h3>
                  <CareerMatchList matches={analysis.careerMatches} />
             </div>
         </div>
         
         <div className="p-6 bg-indigo-50 border-t-2 border-white flex justify-center flex-shrink-0">
-            <p className="text-[10px] text-text-muted uppercase tracking-[0.4em] font-black">ATS Master Pro v4.2 • Procedimiento Neural de Auditoría Realizado</p>
+            <p className="text-[10px] text-text-muted uppercase tracking-[0.4em] font-black">ATS Master Pro v4.2 • {lang === 'es' ? 'Procedimiento Neural de Auditoría Realizado' : 'Neural Audit Procedure Completed'}</p>
         </div>
       </div>
     </div>
