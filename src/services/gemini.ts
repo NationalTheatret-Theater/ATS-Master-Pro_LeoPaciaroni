@@ -5,10 +5,21 @@ let aiInstance: GoogleGenAI | null = null;
 
 function getAI(): GoogleGenAI {
   if (!aiInstance) {
-    const apiKey = process.env.GEMINI_API_KEY;
+    // Try both define-wrapped process.env and the new global bridge
+    let apiKey = process.env.GEMINI_API_KEY;
+    
+    // Fallback if the process.env replacement fails
+    if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey === '') {
+      try {
+        // @ts-ignore - this is defined in vite.config.ts
+        apiKey = __GEMINI_API_KEY__;
+      } catch (e) {
+        // ignore
+      }
+    }
     
     if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey === '') {
-      throw new Error("No se detectó la llave de IA. Por favor, crea un nuevo Secret con el nombre 'LLAVE_EXPERTA' en el panel lateral, pega tu código AIza... allí, pulsa 'Restart Server' y refresca la pestaña.");
+      throw new Error("No se detectó la llave de IA. Por favor, asegúrate de que el Secret 'LLAVE_EXPERTA' tenga tu código AIza... luego pulsa 'Restart Server' y refresca la pestaña.");
     }
     aiInstance = new GoogleGenAI({ apiKey });
   }
