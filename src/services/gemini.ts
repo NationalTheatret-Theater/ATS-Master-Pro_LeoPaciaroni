@@ -6,8 +6,9 @@ let aiInstance: GoogleGenAI | null = null;
 function getAI(): GoogleGenAI {
   if (!aiInstance) {
     const apiKey = process.env.GEMINI_API_KEY;
-    if (!apiKey) {
-      throw new Error("El motor de IA no ha podido inicializarse: GEMINI_API_KEY no detectada. Por favor, revisa la configuración del entorno.");
+    if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey === '') {
+      console.error("DEBUG: GEMINI_API_KEY is missing or invalid in process.env");
+      throw new Error("El motor de IA no ha podido inicializarse: GEMINI_API_KEY no detectada. Por favor, asegúrate de haber configurado el 'Secret' en el panel lateral y haber refrescado la pestaña.");
     }
     aiInstance = new GoogleGenAI({ apiKey });
   }
