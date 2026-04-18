@@ -126,12 +126,11 @@ const scoreKeywords = (text: string, keywords = KEYWORD_BANK): KeywordScore => {
 
   keywords.forEach(kw => {
     const normKw = normalize(kw);
-    // Use word boundary-like regex for better accuracy
-    // Checks if the keyword exists with spaces or start/end of string surrounding it
+    // Explicit word boundary checks to prevent hallucinations (e.g. matching "Azure" inside another word)
     const escapedKw = normKw.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const regex = new RegExp(`\\s${escapedKw}\\s`, 'i');
+    const regex = new RegExp(`(?<=\\s|^)${escapedKw}(?=\\s|$)`, 'i');
     
-    if (regex.test(normText) || normText.includes(` ${normKw} `)) {
+    if (regex.test(normText.trim())) {
       found.push(kw);
     } else {
       missing.push(kw);
@@ -319,9 +318,15 @@ export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnal
           : (lang === 'en' ? "Junior / Specialist" : "Junior / Especialista"),
       marketValueScore: clamp(overallScore * 0.7 + keywordScore.found.length * 3),
       salaryRangeEstimation: lang === "en" 
-        ? "Dynamic estimation based on detected competencies and quantified impact." 
-        : "Estimación dinámica basada en competencias detectadas e impacto cuantificado.",
-      recommendedLearningPath: keywordScore.missing.slice(0, 5).map(capitalize),
+        ? (cvText.length > 5000 ? "$8k - $12k USD/mo (Target: Global Markets)" : "$4k - $7k USD/mo")
+        : (cvText.length > 5000 ? "$6.000.000 - $9.000.000 CLP/m (Target: Latam/Corporate)" : "$2.500.000 - $4.500.000 CLP/m"),
+      recommendedLearningPath: [
+        lang === 'en' ? `Mastering Strategic ${keywordScore.missing[0] || 'Leadership'} Certifications` : `Certificación Avanzada en Estrategia de ${keywordScore.missing[0] || 'Liderazgo'}`,
+        lang === 'en' ? `Deep Dive: Advanced ${keywordScore.missing[1] || 'Analytics'} & Metrics` : `Especialización Técnica: ${keywordScore.missing[1] || 'Análisis'} y Métricas Críticas`,
+        lang === 'en' ? `Project Management Professional (PMP) alignment for ${keywordScore.missing[2] || 'Operations'}` : `Módulo PMP: Gestión de Proyectos para ${keywordScore.missing[2] || 'Operaciones'}`,
+        lang === 'en' ? `English for Business: C1 level focus for international roles` : `Inglés de Negocios: Nivel C1 para roles internacionales`,
+        lang === 'en' ? `Digital Transformation: Leading ${keywordScore.missing[3] || 'Cloud'} migrations` : `Transformación Digital: Liderando migraciones ${keywordScore.missing[3] || 'Cloud'}`
+      ].map(capitalize),
       topStrengths: unique([...keywordScore.found.slice(0, 5), ...softSkillsFound.slice(0, 3)]).slice(0, 8).map(capitalize),
     },
     impactScore,
@@ -402,21 +407,23 @@ ${unique([...match.found, ...insertedKeywords]).slice(0, 14).map((keyword) => `-
 
 export const getLinkedInInsights = async (cvText: string, lang: Language): Promise<LinkedInInsight> => {
   const allTerms = unique([...scoreKeywords(cvText).found, ...getTopTerms(cvText, 10)]);
-  // Filter out meta-tech words for the headline to avoid "Especialista en api"
-  const ignoredForHeadline = new Set(['api', 'aws', 'css', 'html', 'git', 'etl']);
-  const terms = allTerms.filter(t => !ignoredForHeadline.has(t)).slice(0, 10).map(capitalize);
+  // Filter out meta-tech words and generic terms for the headline
+  const ignoredForHeadline = new Set(['analytics', 'api', 'aws', 'css', 'html', 'git', 'etl', 'data', 'bi']);
+  const terms = allTerms.filter(t => !ignoredForHeadline.has(t.toLowerCase())).slice(0, 10).map(capitalize);
   
-  const leadTerm = terms[0] || (lang === "en" ? "Executive" : "Ejecutivo");
-  const secondTerm = terms[1] || (lang == "en" ? "Strategy" : "Estrategia");
+  const leadTerm = terms[0] || (lang === "en" ? "Strategic Leader" : "Líder Estratégico");
+  const secondTerm = terms[1] || (lang == "en" ? "Business Strategy" : "Estrategia de Negocio");
 
   return {
     headlineSuggestion: lang === "en"
-      ? `${leadTerm} Leader | ${secondTerm} specialist | Driving business growth`
-      : `${leadTerm} | Especialista en ${secondTerm} | Impulsando crecimiento de negocio`,
+      ? `${leadTerm} | Driving Business Growth through ${secondTerm} | Strategic Impact Focused`
+      : `${leadTerm} | Impulsando Crecimiento de Negocio mediante ${secondTerm} | Enfoque en Impacto Estratégico`,
     suggestedHeadlines: [
-      `${leadTerm} | ${secondTerm} | ${lang === "en" ? "Strategic results & Execution" : "Resultados estratégicos y Ejecución"}`,
-      `${lang === "en" ? "Expert focused on" : "Experto enfocado en"} ${terms.slice(0, 3).join(" | ")}`,
-      `${lang === "en" ? "Scaling operations through" : "Escalando operaciones mediante"} ${terms.slice(0, 2).join(" & ")}`,
+      `${leadTerm} | Expert in ${secondTerm} | ${lang === "en" ? "Result-Oriented Leader" : "Líder Orientado a Resultados"}`,
+      `${lang === "en" ? "Transforming companies via" : "Transformando empresas mediante"} ${terms.slice(0, 2).join(" & ")}`,
+      `${lang === "en" ? "Scaling Operations with" : "Escalando Operaciones con"} ${terms[2] || 'Strategic Management'} | ${leadTerm}`,
+      `${leadTerm} Specialists | ${secondTerm} | Strategic Visionary`,
+      `${lang === "en" ? "Global Operations Leader | Focused on" : "Líder de Operaciones Globales | Enfocado en"} ${terms.slice(1, 3).join(" y ")}`
     ],
     aboutSection: lang === "en"
       ? `I help teams turn execution into measurable outcomes. My profile combines ${terms.slice(0, 5).join(", ")} and a practical focus on business impact.`

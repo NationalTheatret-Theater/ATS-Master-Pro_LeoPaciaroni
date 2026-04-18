@@ -48,75 +48,77 @@ export const LinkedInInsights: React.FC<LinkedInInsightsProps> = ({ data, lang }
   const handleExportWord = () => {
     const content = `
       <html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word'>
-      <head><meta charset='utf-8'><title>LinkedIn Market Pulse</title>
+      <head><meta charset='utf-8'><title>${t.linkedInTitle}</title>
       <style>
-        body { font-family: 'Calibri', sans-serif; color: #1e293b; }
-        h1 { color: #0077b5; font-size: 24pt; margin-bottom: 5px; }
-        .subtitle { color: #64748b; font-size: 11pt; margin-bottom: 20px; }
-        h2 { color: #0f172a; font-size: 14pt; border-bottom: 2px solid #e2e8f0; padding-bottom: 5px; margin-top: 20px; margin-bottom: 10px; }
-        h3 { color: #334155; font-size: 12pt; margin-top: 15px; font-weight: bold; }
-        p { font-size: 11pt; line-height: 1.5; margin-bottom: 10px; }
-        ul { margin-bottom: 10px; }
-        li { font-size: 11pt; margin-bottom: 5px; }
-        .highlight { background-color: #f1f5f9; padding: 15px; border-radius: 5px; border: 1px solid #e2e8f0; }
-        .metric { color: #0077b5; font-weight: bold; }
-        .tag { display: inline-block; background-color: #e2e8f0; padding: 2px 8px; border-radius: 10px; font-size: 10pt; margin-right: 5px; color: #475569; }
+        body { font-family: 'Segoe UI', 'Calibri', sans-serif; color: #1e293b; line-height: 1.6; }
+        .header { background-color: #0077b5; color: #ffffff; padding: 30px; border-radius: 10px; margin-bottom: 30px; }
+        h1 { color: #ffffff; font-size: 28pt; margin: 0; padding: 0; }
+        .subtitle { color: #e2e8f0; font-size: 11pt; margin-top: 5px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; }
+        h2 { color: #0077b5; font-size: 18pt; border-bottom: 3px solid #0077b5; padding-bottom: 8px; margin-top: 40px; margin-bottom: 20px; text-transform: uppercase; }
+        h3 { color: #334155; font-size: 14pt; margin-top: 25px; font-weight: bold; padding: 10px 0; }
+        p { font-size: 11pt; margin-bottom: 15px; }
+        .highlight { background-color: #f8fafc; padding: 25px; border-radius: 15px; border: 2px dashed #0077b5; margin: 20px 0; font-size: 13pt; font-weight: bold; text-align: center; }
+        .quote { font-style: italic; color: #475569; border-left: 5px solid #0077b5; padding-left: 20px; margin: 20px 0; background: #f1f5f9; padding: 20px; }
+        .tag { display: inline-block; background-color: #0077b5; color: #ffffff; padding: 4px 12px; border-radius: 20px; font-size: 9pt; margin-right: 8px; margin-bottom: 8px; }
       </style>
       </head>
       <body>
-        <h1>LinkedIn Market Pulse</h1>
-        <p class="subtitle">Neural Analysis by ATS Master Pro • ${new Date().toLocaleDateString()}</p>
+        <div class="header">
+          <h1>${t.linkedInTitle}</h1>
+          <p class="subtitle">Neural Branding Analysis • ATS Master Pro v4.2</p>
+        </div>
         
+        <p><strong>Date:</strong> ${new Date().toLocaleDateString()}</p>
+        <p>This report contains a strategic digital presence optimization based on current market semantic trends and role alignment.</p>
+
         <div class="section">
-            <h2>Headline Strategy</h2>
-            <h3>Top Recommendation</h3>
+            <h2>${t.highImpact}</h2>
             <div class="highlight">
-                <p><strong>${data.headlineSuggestion}</strong></p>
+                <p>"${capitalizedHeadline}"</p>
             </div>
             
-            <h3>Alternatives</h3>
+            <h3>Alternative Strategies</h3>
             <ul>
                 ${capitalizedHeadlines.map(h => `<li>${h}</li>`).join('')}
             </ul>
         </div>
 
         <div class="section">
-            <h2>About Section</h2>
-            <div class="highlight">
+            <h2>${t.aboutMe} (Optimized Profile)</h2>
+            <div class="quote">
                 <p style="white-space: pre-wrap;">${data.aboutSection}</p>
             </div>
         </div>
 
         <div class="section">
-            <h2>Market Intelligence</h2>
-            <p><span class="metric">Estimated Viral Potential:</span> ${data.viralPotentialScore}%</p>
-            <p><span class="metric">Hiring Trends:</span> ${data.hiringTrends}</p>
+            <h2>${lang === 'es' ? 'Inteligencia de Mercado' : 'Market Intelligence'}</h2>
+            <p><strong>Visibility Potential Score:</strong> ${data.viralPotentialScore}%</p>
+            <h3>Hiring Trends Analysis</h3>
+            <div class="quote">${data.hiringTrends}</div>
         </div>
 
         <div class="section">
-            <h2>Target Keywords</h2>
+            <h2>${lang === 'es' ? 'Palabras Clave de Impacto' : 'Impact Keywords'}</h2>
             <p>${data.trendingKeywords.map(k => `<span class="tag">#${k}</span>`).join('')}</p>
         </div>
 
-         <div class="section">
-            <h2>Skill Gaps (Hot Market Skills)</h2>
-            <p>${data.skillGapsForMarket.map(k => `<span class="tag">${k}</span>`).join('')}</p>
-        </div>
-
         <div class="section">
-            <h2>Strategic Networking</h2>
+            <h2>${t.networkingStrategy}</h2>
              <ul>
                 ${data.suggestedConnections.map(h => `<li>${h}</li>`).join('')}
             </ul>
         </div>
 
          <div class="section">
-            <h2>Content Strategy Ideas</h2>
+            <h2>${t.contentIdeas}</h2>
              <ul>
                 ${data.contentIdeas.map(h => `<li>${h}</li>`).join('')}
             </ul>
         </div>
 
+        <div style="margin-top: 50px; border-top: 1px solid #e2e8f0; padding-top: 20px; text-align: center; color: #94a3b8; font-size: 9pt;">
+          CONFIDENTIAL STRATEGIC REPORT • GENERATED BY ATS MASTER PRO NEURAL CORE
+        </div>
       </body></html>`;
 
     const blob = new Blob(['\ufeff', content], { type: 'application/msword' });

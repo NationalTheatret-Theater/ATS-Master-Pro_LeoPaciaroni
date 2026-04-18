@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [currentState, setCurrentState] = useState<AppState>(AppState.INPUT);
   const [cvText, setCvText] = useState<string>('');
   const [analysis, setAnalysis] = useState<ATSAnalysis | null>(null);
+  const [originalScore, setOriginalScore] = useState<number | null>(null);
   const [optimizedCV, setOptimizedCV] = useState<OptimizationResult | null>(null);
   const [jobDescription, setJobDescription] = useState<string>('');
   const [tailoredResult, setTailoredResult] = useState<TailoredResult | null>(null);
@@ -110,7 +111,7 @@ const App: React.FC = () => {
     }
   };
 
-  const handleAnalyze = async (textToAnalyze: string = cvText) => {
+  const handleAnalyze = async (textToAnalyze: string = cvText, isComparison: boolean = false) => {
     if (textToAnalyze.trim().length < 50) { 
         setErrorMsg(lang === 'es' ? "El CV es demasiado corto." : "CV is too short."); 
         return; 
@@ -121,6 +122,14 @@ const App: React.FC = () => {
     try {
       // 1. Core Analysis
       const ana = await LocalEngine.analyzeCV(textToAnalyze, lang);
+      
+      if (isComparison && originalScore !== null) {
+        ana.originalScore = originalScore;
+        ana.optimizedScore = ana.overallScore;
+      } else {
+        setOriginalScore(ana.overallScore);
+      }
+
       setAnalysis(ana);
       
       // 2. Optimization
@@ -139,8 +148,7 @@ const App: React.FC = () => {
 
   const handleReanalyzeOptimized = () => {
     if (optimizedCV?.markdownCV) {
-        setCvText(optimizedCV.markdownCV);
-        handleAnalyze(optimizedCV.markdownCV);
+        handleAnalyze(optimizedCV.markdownCV, true);
     }
   };
 

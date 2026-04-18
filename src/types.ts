@@ -38,9 +38,16 @@ export interface VocationalProfile {
 
 export interface ATSAnalysis {
   overallScore: number;
+  originalScore?: number;
+  optimizedScore?: number;
   sectionBreakdown: SectionScore[];
   vocationalProfile: VocationalProfile;
   keywordMatch?: number;
+  keywordScoreDetails?: {
+    totalRequired: number;
+    foundCount: number;
+    densityPercentage: number;
+  };
   impactScore: number;
   contextualMatch: number;
   successPrediction: number;
@@ -52,6 +59,7 @@ export interface ATSAnalysis {
   improvementSuggestions: string[];
   careerMatches: CareerMatch[];
   summary: string;
+  optimizationRationale?: string;
 }
 
 export interface OptimizationResult {
