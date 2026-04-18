@@ -7,11 +7,12 @@ import { motion } from 'motion/react';
 import { cn } from '../lib/utils';
 
 interface ClientListProps {
+  user: any;
   onSelectClient: (client: Client) => void;
   lang: Language;
 }
 
-export const ClientList: React.FC<ClientListProps> = ({ onSelectClient, lang }) => {
+export const ClientList: React.FC<ClientListProps> = ({ user, onSelectClient, lang }) => {
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
@@ -28,12 +29,12 @@ export const ClientList: React.FC<ClientListProps> = ({ onSelectClient, lang }) 
   });
 
   const fetchClients = async () => {
-    if (!auth.currentUser) return;
+    if (!user) return;
     setLoading(true);
     try {
       const q = query(
         collection(db, 'clients'),
-        where('ownerId', '==', auth.currentUser.uid),
+        where('ownerId', '==', user.uid),
         orderBy('updatedAt', 'desc')
       );
       const querySnapshot = await getDocs(q);
@@ -55,12 +56,12 @@ export const ClientList: React.FC<ClientListProps> = ({ onSelectClient, lang }) 
 
   const handleAddClient = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!auth.currentUser) return;
+    if (!user) return;
     
     try {
       const docRef = await addDoc(collection(db, 'clients'), {
         ...newClient,
-        ownerId: auth.currentUser.uid,
+        ownerId: user.uid,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -68,7 +69,7 @@ export const ClientList: React.FC<ClientListProps> = ({ onSelectClient, lang }) 
       const createdClient: Client = {
         id: docRef.id,
         ...newClient,
-        ownerId: auth.currentUser.uid,
+        ownerId: user.uid,
         createdAt: new Date(),
         updatedAt: new Date()
       };

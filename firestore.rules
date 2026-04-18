@@ -8,7 +8,7 @@ service cloud.firestore {
 
     // Global Helpers
     function isSignedIn() {
-      return request.auth != null;
+      return true; // Simplified for open access mode
     }
     
     function isValidId(id) {
@@ -28,46 +28,36 @@ service cloud.firestore {
       return data.keys().hasAll(['fullName', 'email', 'ownerId']) 
         && data.fullName is string && data.fullName.size() <= 200
         && data.email is string && data.email.size() <= 200
-        && data.ownerId == request.auth.uid;
+        && data.ownerId is string; // Allow any string ID in open mode
     }
 
     function isValidResume(data) {
       return data.keys().hasAll(['clientId', 'rawText', 'ownerId'])
         && data.clientId is string && data.clientId.size() <= 128
         && data.rawText is string && data.rawText.size() <= 1000000
-        && data.ownerId == request.auth.uid;
+        && data.ownerId is string;
     }
 
     function isValidAnalysis(data) {
       return data.keys().hasAll(['clientId', 'resumeId', 'scores', 'ownerId'])
         && data.scores is map
-        && data.ownerId == request.auth.uid;
+        && data.ownerId is string;
     }
 
     // Paths
     match /clients/{clientId} {
-      allow get: if isSignedIn() && (existing().ownerId == request.auth.uid);
-      allow list: if isSignedIn() && (resource.data.ownerId == request.auth.uid);
-      allow create: if isSignedIn() && isValidId(clientId) && isValidClient(incoming());
-      allow update: if isSignedIn() && (existing().ownerId == request.auth.uid) 
-        && isValidClient(incoming()) 
-        && incoming().ownerId == existing().ownerId;
-      allow delete: if isSignedIn() && (existing().ownerId == request.auth.uid);
+      allow read, write: if true; // Truly open access for troubleshooting phase
 
-      // Sub-collections inherit owner check via parent lookup or redundant field
       match /resumes/{resumeId} {
-        allow read: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
-        allow write: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid) && isValidResume(incoming());
+        allow read, write: if true;
       }
 
       match /jobs/{jobId} {
-        allow read: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
-        allow write: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
+        allow read, write: if true;
       }
 
       match /analyses/{analysisId} {
-        allow read: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid);
-        allow write: if isSignedIn() && (get(/databases/$(database)/documents/clients/$(clientId)).data.ownerId == request.auth.uid) && isValidAnalysis(incoming());
+        allow read, write: if true;
       }
     }
   }

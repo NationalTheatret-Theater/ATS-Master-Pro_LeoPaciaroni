@@ -28,12 +28,13 @@ import { processFile } from '../services/fileProcessing';
 import { geminiService } from '../services/gemini';
 
 interface ClientDetailProps {
+  user: any;
   client: Client;
   lang: Language;
   onBack: () => void;
 }
 
-export const ClientDetail: React.FC<ClientDetailProps> = ({ client, lang, onBack }) => {
+export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, onBack }) => {
   const [resumes, setResumes] = useState<Resume[]>([]);
   const [jobs, setJobs] = useState<JobDescription[]>([]);
   const [analyses, setAnalyses] = useState<Analysis[]>([]);
@@ -74,7 +75,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ client, lang, onBack
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, type: 'resume' | 'job') => {
     const file = e.target.files?.[0];
-    if (!file || !auth.currentUser) return;
+    if (!file || !user) return;
 
     try {
       setLoading(true);
@@ -90,7 +91,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ client, lang, onBack
           parsedJson: parsed,
           language: lang,
           versionName: `Version ${resumes.length + 1}`,
-          ownerId: auth.currentUser.uid,
+          ownerId: user.uid,
           createdAt: serverTimestamp()
         });
       } else {
@@ -102,7 +103,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ client, lang, onBack
           rawText,
           parsedJson: parsed,
           language: lang,
-          ownerId: auth.currentUser.uid,
+          ownerId: user.uid,
           createdAt: serverTimestamp()
         });
       }
@@ -116,7 +117,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ client, lang, onBack
   };
 
   const handleStartAnalysis = async () => {
-    if (!selectedResumeId || !auth.currentUser) return;
+    if (!selectedResumeId || !user) return;
     
     const resume = resumes.find(r => r.id === selectedResumeId);
     const job = jobs.find(j => j.id === selectedJobId);
@@ -138,7 +139,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ client, lang, onBack
         alerts: results.alerts,
         recommendations: results.recommendations,
         marketPulse: results.marketPulse,
-        ownerId: auth.currentUser.uid,
+        ownerId: user.uid,
         createdAt: serverTimestamp()
       };
 

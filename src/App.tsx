@@ -88,18 +88,33 @@ const SidebarItem = ({ icon: Icon, label, active, onClick }: { icon: any, label:
 );
 
 export default function App() {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [view, setView] = useState<AppState>(AppState.DASHBOARD);
   const [lang, setLang] = useState<Language>('es');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
 
+  // Default Guest User for "Open Access" mode
+  const GUEST_USER = {
+    uid: 'executive-guest-consultant',
+    displayName: 'Consultor Ejecutivo',
+    email: 'consultor@executive-ats.com',
+    photoURL: null
+  };
+
   useEffect(() => {
-    return onAuthStateChanged(auth, (user) => {
-      setUser(user);
+    const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
+      // If we have a real user, use it. Otherwise, use guest for open access.
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        setView(AppState.DASHBOARD);
+      } else {
+        setUser(GUEST_USER);
+        setView(AppState.DASHBOARD);
+      }
       setLoading(false);
-      if (user) setView(AppState.DASHBOARD);
     });
+    return () => unsubscribe();
   }, []);
 
   const handleSelectClient = (client: Client) => {
@@ -115,7 +130,8 @@ export default function App() {
     );
   }
 
-  if (!user) return <LoginView />;
+  // Login is now bypassed
+  // if (!user) return <LoginView />;
 
   return (
     <div className="min-h-screen bg-executive-paper flex overflow-hidden">
@@ -379,13 +395,14 @@ export default function App() {
                     {lang === 'es' ? "Gestión y mapeo estratégico de carrera para tus candidatos ejecutivos." : "Management and strategic career mapping for your executive candidates."}
                   </p>
                 </div>
-                <ClientList lang={lang} onSelectClient={handleSelectClient} />
+                <ClientList user={user} lang={lang} onSelectClient={handleSelectClient} />
               </motion.div>
             )}
 
             {view === AppState.CLIENT_DETAIL && selectedClient && (
               <motion.div key="client-detail" initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}>
                 <ClientDetail 
+                  user={user}
                   client={selectedClient} 
                   lang={lang} 
                   onBack={() => {
