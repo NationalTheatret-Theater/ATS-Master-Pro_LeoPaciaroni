@@ -73,16 +73,16 @@ const ACTION_VERBS = [
   "reduje",
 ];
 
-const ROLE_KEYWORDS: Array<{ role: string; industry: string; keywords: string[] }> = [
-  { role: "Analista de Datos", industry: "Business Intelligence", keywords: ["data", "sql", "excel", "power bi", "analytics", "kpi", "reporting", "etl", "python"] },
-  { role: "Product Manager", industry: "Tecnologia", keywords: ["stakeholders", "roadmap", "scrum", "kpi", "usuario", "producto", "gestion", "agile", "backlog"] },
-  { role: "Frontend Developer", industry: "Software", keywords: ["react", "typescript", "javascript", "html", "css", "api", "ux", "ui", "git"] },
-  { role: "Backend Developer", industry: "Software", keywords: ["node", "api", "sql", "aws", "docker", "cloud", "java", "python", "microservicios"] },
-  { role: "Operations Specialist", industry: "Operaciones", keywords: ["automatizacion", "procesos", "kpi", "excel", "gestion", "mejora", "logistica", "planificacion"] },
-  { role: "Marketing Specialist", industry: "Growth", keywords: ["marketing", "crm", "campanas", "analytics", "ventas", "conversion", "seo", "sem", "adquisicion"] },
-  { role: "HR / Recruitment", industry: "Recursos Humanos", keywords: ["talento", "reclutamiento", "payroll", "rrhh", "gestion", "comunicacion", "entrevistas"] },
-  { role: "Finance Manager", industry: "Finanzas", keywords: ["presupuesto", "p&l", "ebitda", "auditoria", "contabilidad", "tesoreria", "finanzas", "analisis"] },
-  { role: "Customer Success", industry: "Servicios", keywords: ["retencion", "clientes", "feedback", "soporte", "crm", "fidelizacion", "gestion"] },
+const ROLE_KEYWORDS: Array<{ role: { es: string; en: string }; industry: { es: string; en: string }; keywords: string[] }> = [
+  { role: { es: "Analista de Datos", en: "Data Analyst" }, industry: { es: "Inteligencia de Negocio", en: "Business Intelligence" }, keywords: ["data", "sql", "excel", "power bi", "analytics", "kpi", "reporting", "etl", "python"] },
+  { role: { es: "Gerente de Producto", en: "Product Manager" }, industry: { es: "Tecnología", en: "Technology" }, keywords: ["stakeholders", "roadmap", "scrum", "kpi", "usuario", "producto", "gestion", "agile", "backlog"] },
+  { role: { es: "Desarrollador Frontend", en: "Frontend Developer" }, industry: { es: "Software", en: "Software" }, keywords: ["react", "typescript", "javascript", "html", "css", "api", "ux", "ui", "git"] },
+  { role: { es: "Desarrollador Backend", en: "Backend Developer" }, industry: { es: "Software", en: "Software" }, keywords: ["node", "api", "sql", "aws", "docker", "cloud", "java", "python", "microservicios"] },
+  { role: { es: "Especialista en Operaciones", en: "Operations Specialist" }, industry: { es: "Operaciones", en: "Operations" }, keywords: ["automatizacion", "procesos", "kpi", "excel", "gestion", "mejora", "logistica", "planificacion"] },
+  { role: { es: "Especialista en Marketing", en: "Marketing Specialist" }, industry: { es: "Growth / Marketing", en: "Growth / Marketing" }, keywords: ["marketing", "crm", "campanas", "analytics", "ventas", "conversion", "seo", "sem", "adquisicion"] },
+  { role: { es: "Recursos Humanos / Reclutamiento", en: "HR / Recruitment" }, industry: { es: "Talento", en: "Talent" }, keywords: ["talento", "reclutamiento", "payroll", "rrhh", "gestion", "comunicacion", "entrevistas"] },
+  { role: { es: "Gerente de Finanzas", en: "Finance Manager" }, industry: { es: "Finanzas", en: "Finance" }, keywords: ["presupuesto", "p&l", "ebitda", "auditoria", "contabilidad", "tesoreria", "finanzas", "analisis"] },
+  { role: { es: "Customer Success", en: "Customer Success" }, industry: { es: "Servicios / SaaS", en: "Services / SaaS" }, keywords: ["retencion", "clientes", "feedback", "soporte", "crm", "fidelizacion", "gestion"] },
 ];
 
 const normalize = (value: string) =>
@@ -90,8 +90,14 @@ const normalize = (value: string) =>
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\w\s+#.|$]/g, " ") // Replace punctuation with space for better tokenization
+    .replace(/[^\w\s+#.|$]/g, " ") 
     .replace(/\s+/g, " ");
+
+const stripOptimizationSection = (text: string) => {
+  // Removes common headers that might contain tokens we don't want to match as candidate skills
+  const pattern = /## (OPTIMIZACIONES OBJETIVO|TARGET OPTIMIZATIONS|Ajuste para la oferta)[\s\S]*/i;
+  return text.replace(pattern, '');
+};
 
 const unique = (items: string[]) => Array.from(new Set(items.filter(Boolean)));
 
@@ -137,7 +143,7 @@ const scoreKeywords = (text: string, keywords = KEYWORD_BANK): KeywordScore => {
     }
   });
 
-  const score = keywords.length ? clamp((found.length / keywords.length) * 100) : 0;
+  const score = keywords.length ? clamp((found.length / Math.min(keywords.length, 25)) * 100) : 0;
   return { found, missing: missing.slice(0, 15), score };
 };
 
@@ -176,14 +182,14 @@ const actionVerbCount = (text: string) => {
 
 const buildSectionBreakdown = (text: string, keywordScore: KeywordScore, lang: Language) => {
   const detected = countSections(text);
-  const totalWeight = SECTION_PATTERNS.length - 2; 
+  const totalWeight = SECTION_PATTERNS.length; 
   const sectionsScore = clamp((detected / totalWeight) * 100);
   
   const metrics = metricCount(text);
   const datePatterns = /\d{4} ?- ?\d{4}|\d{4} ?- ?present|actualidad|presente/gi;
   const hasDates = datePatterns.test(text);
   
-  const impactScore = clamp(metrics * 15 + actionVerbCount(text) * 4 + (hasDates ? 15 : 0) + 10);
+  const impactScore = clamp(metrics * 12 + actionVerbCount(text) * 3 + (hasDates ? 15 : 0) + 10);
   const readabilityScore = clamp(100 - Math.max(0, text.length - 4500) / 90);
   const structureStatus: SectionScore["status"] = sectionsScore > 85 ? "Excellent" : sectionsScore > 65 ? "Good" : sectionsScore > 40 ? "Improvement" : "Critical";
 
@@ -191,17 +197,17 @@ const buildSectionBreakdown = (text: string, keywordScore: KeywordScore, lang: L
     {
       category: lang === 'en' ? "ATS Structure" : "Estructura ATS",
       score: sectionsScore,
-      feedback: sectionsScore > 75
-        ? (lang === 'en' ? "Document architecture compatible with semantic search engines." : "Arquitectura de documento compatible con motores de búsqueda por secciones.")
-        : (lang === 'en' ? "Standard headers missing: Experience, Education, Skills." : "Se recomienda usar encabezados estándar: Experiencia, Educación, Habilidades."),
+      feedback: sectionsScore > 80
+        ? (lang === 'en' ? "Perfect document architecture. Standard headers detected." : "Arquitectura de documento perfecta. Encabezados estándar detectados.")
+        : (lang === 'en' ? "Headers missing: Experience, Education or Skills." : "Faltan encabezados esenciales: Experiencia, Educación o Habilidades."),
       status: structureStatus,
     },
     {
-      category: lang === 'en' ? "Keyword Density" : "Densidad de Keywords",
+      category: lang === 'en' ? "Strategic Keywords" : "Keywords Estratégicas",
       score: keywordScore.score,
-      feedback: keywordScore.found.length
-        ? (lang === 'en' ? `Detected ${keywordScore.found.length} core semantic connections.` : `Se detectaron ${keywordScore.found.length} conexiones semánticas clave.`)
-        : (lang === 'en' ? "Technical terms missing to validate target industry expertise." : "Faltan términos técnicos que validen tu experiencia en el sector objetivo."),
+      feedback: keywordScore.found.length > 15
+        ? (lang === 'en' ? `Highly competitive density (${keywordScore.found.length} terms found).` : `Densidad altamente competitiva (${keywordScore.found.length} términos encontrados).`)
+        : (lang === 'en' ? `Baseline density detected (${keywordScore.found.length} terms). Needs technical depth.` : `Densidad base detectada (${keywordScore.found.length} términos). Requiere más profundidad técnica.`),
       status: keywordScore.score > 75 ? "Excellent" as const : keywordScore.score > 55 ? "Good" as const : keywordScore.score > 35 ? "Improvement" as const : "Critical" as const,
     },
     {
@@ -231,8 +237,8 @@ const buildCareerMatches = (text: string, lang: Language) => {
     const matchPercentage = clamp(40 + (found.length / role.keywords.length) * 60);
 
     return {
-      role: role.role,
-      industry: role.industry,
+      role: role.role[lang],
+      industry: role.industry[lang],
       matchPercentage,
       gapAnalysis: found.length >= role.keywords.length / 2
         ? (lang === 'en' ? `Strong foundation in ${found.slice(0, 4).join(", ")}.` : `Base sólida en ${found.slice(0, 4).join(", ")}.`)
@@ -285,8 +291,9 @@ ${missing.map((keyword) => `- ${lang === 'en' ? `Deepen evidence for "${keyword}
 };
 
 export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnalysis> => {
-  const keywordScore = scoreKeywords(cvText);
-  const sectionBreakdown = buildSectionBreakdown(cvText, keywordScore, lang);
+  const cleanTextForMatching = stripOptimizationSection(cvText);
+  const keywordScore = scoreKeywords(cleanTextForMatching);
+  const sectionBreakdown = buildSectionBreakdown(cleanTextForMatching, keywordScore, lang);
   const sectionAverage = sectionBreakdown.reduce((sum, item) => sum + item.score, 0) / sectionBreakdown.length;
   
   const impactLabel = lang === 'en' ? "Impact Proof" : "Evidencia de Impacto";
@@ -294,32 +301,32 @@ export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnal
   
   const impactScore = sectionBreakdown.find((item) => item.category === impactLabel)?.score || 0;
   
-  // World-class ATS weighting: Keywords (45%), Impact/Metrics (35%), Structure (20%)
+  // World-class ATS weighting: Keywords (35%), Impact/Metrics (45%), Structure (20%)
   const overallScore = clamp(
-    keywordScore.score * 0.45 +
-    impactScore * 0.35 +
+    keywordScore.score * 0.35 +
+    impactScore * 0.45 +
     sectionBreakdown.find(b => b.category === structureLabel)!.score * 0.20
   );
 
-  const softSkillsFound = SOFT_SKILLS.filter((skill) => normalize(cvText).includes(normalize(skill)));
+  const softSkillsFound = SOFT_SKILLS.filter((skill) => normalize(cleanTextForMatching).includes(normalize(skill)));
   const culturalFit = clamp(40 + softSkillsFound.length * 12);
   const successPrediction = clamp(overallScore * 0.70 + culturalFit * 0.30);
-  const hasContact = /@|linkedin\.com|github\.com|\+\d|phone|telefono/i.test(cvText);
+  const hasContact = /@|linkedin\.com|github\.com|\+\d|phone|telefono/i.test(cleanTextForMatching);
 
   return {
     overallScore,
     keywordMatch: keywordScore.score,
     sectionBreakdown,
     vocationalProfile: {
-      estimatedSeniority: cvText.length > 5000 || metricCount(cvText) > 8 
+      estimatedSeniority: cleanTextForMatching.length > 5000 || metricCount(cleanTextForMatching) > 8 
         ? (lang === 'en' ? "Senior / Strategic Leader" : "Senior / Líder Estratégico") 
-        : cvText.length > 2500 
+        : cleanTextForMatching.length > 2500 
           ? (lang === 'en' ? "Mid-level / Professional" : "Nivel Medio / Profesional") 
           : (lang === 'en' ? "Junior / Specialist" : "Junior / Especialista"),
       marketValueScore: clamp(overallScore * 0.7 + keywordScore.found.length * 3),
       salaryRangeEstimation: lang === "en" 
-        ? (cvText.length > 5000 ? "$8k - $12k USD/mo (Target: Global Markets)" : "$4k - $7k USD/mo")
-        : (cvText.length > 5000 ? "$6.000.000 - $9.000.000 CLP/m (Target: Latam/Corporate)" : "$2.500.000 - $4.500.000 CLP/m"),
+        ? (cleanTextForMatching.length > 5000 ? "$8k - $12k USD/mo (Target: Global Markets)" : "$4k - $7k USD/mo")
+        : (cleanTextForMatching.length > 5000 ? "$6.000.000 - $9.000.000 CLP/m (Target: Latam/Corporate)" : "$2.500.000 - $4.500.000 CLP/m"),
       recommendedLearningPath: [
         lang === 'en' ? `Mastering Strategic ${keywordScore.missing[0] || 'Leadership'} Certifications` : `Certificación Avanzada en Estrategia de ${keywordScore.missing[0] || 'Liderazgo'}`,
         lang === 'en' ? `Deep Dive: Advanced ${keywordScore.missing[1] || 'Analytics'} & Metrics` : `Especialización Técnica: ${keywordScore.missing[1] || 'Análisis'} y Métricas Críticas`,
@@ -340,8 +347,8 @@ export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnal
     missingKeywords: keywordScore.missing,
     criticalIssues: [
       !hasContact ? (lang === "en" ? "Critical: Contact information (Email/Phone) missing." : "Crítico: Falta información de contacto (Email/Teléfono).") : "",
-      metricCount(cvText) < 5 ? (lang === "en" ? "Low impact: Profile lacks significant quantifiable metrics (use numbers/%)" : "Bajo impacto: Perfil carece de métricas cuantificables significativas (usar números/%).") : "",
-      countSections(cvText) < 5 ? (lang === "en" ? "Structural Gap: Essential ATS headers missing or poorly labeled." : "Brecha Estructural: Faltan encabezados ATS habituales o mal etiquetados.") : "",
+      metricCount(cleanTextForMatching) < 5 ? (lang === "en" ? "Low impact: Profile lacks significant quantifiable metrics (use numbers/%)" : "Bajo impacto: Perfil carece de métricas cuantificables significativas (usar números/%).") : "",
+      countSections(cleanTextForMatching) < 5 ? (lang === "en" ? "Structural Gap: Essential ATS headers missing or poorly labeled." : "Brecha Estructural: Faltan encabezados ATS habituales o mal etiquetados.") : "",
     ].filter(Boolean),
     improvementSuggestions: [
       lang === "en" ? "Modernize headers to [Profile, Professional Experience, Technology Stack]." : "Moderniza encabezados a [Perfil, Experiencia Profesional, Stack Tecnológico].",
@@ -349,8 +356,8 @@ export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnal
       lang === "en" ? "Optimize keyword distribution throughout the professional summary." : "Optimiza la distribución de palabras clave en el resumen profesional.",
       ...keywordScore.missing.slice(0, 3).map((keyword) => lang === "en" ? `Provide project context for ${capitalize(keyword)}.` : `Proveer contexto de proyecto para ${capitalize(keyword)}.`),
     ],
-    careerMatches: buildCareerMatches(cvText, lang),
-    summary: buildSummary(cvText, overallScore, lang),
+    careerMatches: buildCareerMatches(cleanTextForMatching, lang),
+    summary: buildSummary(cleanTextForMatching, overallScore, lang),
   };
 };
 
@@ -406,7 +413,8 @@ ${unique([...match.found, ...insertedKeywords]).slice(0, 14).map((keyword) => `-
 };
 
 export const getLinkedInInsights = async (cvText: string, lang: Language): Promise<LinkedInInsight> => {
-  const allTerms = unique([...scoreKeywords(cvText).found, ...getTopTerms(cvText, 10)]);
+  const cleanText = stripOptimizationSection(cvText);
+  const allTerms = unique([...scoreKeywords(cleanText).found, ...getTopTerms(cleanText, 10)]);
   // Filter out meta-tech words and generic terms for the headline
   const ignoredForHeadline = new Set(['analytics', 'api', 'aws', 'css', 'html', 'git', 'etl', 'data', 'bi']);
   const terms = allTerms.filter(t => !ignoredForHeadline.has(t.toLowerCase())).slice(0, 10).map(capitalize);

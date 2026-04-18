@@ -494,7 +494,7 @@ const App: React.FC = () => {
                               </div>
                            </div>
                            
-                           <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+                           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6">
                               {analysis.careerMatches.slice(0, 5).map((match, idx) => (
                                 <div key={idx} className="bg-indigo-50/30 rounded-card p-6 border-2 border-indigo-50 hover:border-secondary hover:bg-white transition-all group flex flex-col h-full shadow-sm hover:shadow-xl hover:-translate-y-1">
                                     <div className="mb-4">
