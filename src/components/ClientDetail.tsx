@@ -301,47 +301,62 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
                 </div>
                 <div className="relative z-10 space-y-6">
                   <h3 className="text-xl font-serif text-executive-gold underline underline-offset-8">
-                    {lang === 'es' ? "Análisis Rápido" : "Quick Analysis"}
+                    {lang === 'es' ? "Análisis Estratégico" : "Strategic Analysis"}
                   </h3>
                   <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                        {lang === 'es' ? "Seleccionar CV" : "Select Resume"}
-                      </label>
-                      <select 
-                        className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none"
-                        value={selectedResumeId || ''}
-                        onChange={e => setSelectedResumeId(e.target.value)}
-                      >
-                        <option value="" className="bg-executive-navy text-white">
-                          {lang === 'es' ? "Selecciona una versión..." : "Select a version..."}
-                        </option>
-                        {resumes.map(r => <option key={r.id} value={r.id} className="bg-executive-navy text-white">{r.versionName}</option>)}
-                      </select>
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
-                         {lang === 'es' ? "Seleccionar Cargo (Opcional)" : "Select Target Job (Optional)"}
-                      </label>
-                      <select 
-                        className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none"
-                        value={selectedJobId || ''}
-                        onChange={e => setSelectedJobId(e.target.value)}
-                      >
-                        <option value="" className="bg-executive-navy text-white">
-                          {lang === 'es' ? "Pulso de Mercado General..." : "General Market Pulse..."}
-                        </option>
-                        {jobs.map(j => <option key={j.id} value={j.id} className="bg-executive-navy text-white">{j.title}</option>)}
-                      </select>
-                    </div>
-                    <button 
-                      disabled={!selectedResumeId || isAnalyzing}
-                      onClick={handleStartAnalysis}
-                      className="w-full py-3 bg-executive-gold text-executive-navy font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-all disabled:opacity-50"
-                    >
-                      {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileSearch className="w-5 h-5" />}
-                      {lang === 'es' ? "Ejecutar Escaneo Intelectivo" : "Execute Intel Scan"}
-                    </button>
+                    {resumes.length === 0 ? (
+                      <div className="p-6 bg-white/5 border border-dashed border-white/20 rounded-2xl text-center space-y-4">
+                        <p className="text-xs text-slate-300">
+                          {lang === 'es' ? "Para comenzar un análisis, primero debes subir el currículum de tu cliente." : "To start an analysis, you must first upload your client's resume."}
+                        </p>
+                        <label className="luxury-button mx-auto py-2 flex items-center justify-center gap-2 cursor-pointer w-full">
+                          <Upload className="w-4 h-4" />
+                          {lang === 'es' ? "Subir CV Ahora" : "Upload CV Now"}
+                          <input type="file" className="hidden" accept=".pdf,.docx" onChange={e => handleFileUpload(e, 'resume')} />
+                        </label>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                            {lang === 'es' ? "Seleccionar CV" : "Select Resume"}
+                          </label>
+                          <select 
+                            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none"
+                            value={selectedResumeId || ''}
+                            onChange={e => setSelectedResumeId(e.target.value)}
+                          >
+                            <option value="" className="bg-executive-navy text-white">
+                              {lang === 'es' ? "Selecciona una versión..." : "Select a version..."}
+                            </option>
+                            {resumes.map(r => <option key={r.id} value={r.id} className="bg-executive-navy text-white">{r.versionName}</option>)}
+                          </select>
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest block">
+                             {lang === 'es' ? "Seleccionar Cargo (Opcional)" : "Select Target Job (Optional)"}
+                          </label>
+                          <select 
+                            className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-sm text-white focus:outline-none"
+                            value={selectedJobId || ''}
+                            onChange={e => setSelectedJobId(e.target.value)}
+                          >
+                            <option value="" className="bg-executive-navy text-white">
+                              {lang === 'es' ? "Pulso de Mercado General..." : "General Market Pulse..."}
+                            </option>
+                            {jobs.map(j => <option key={j.id} value={j.id} className="bg-executive-navy text-white">{j.title}</option>)}
+                          </select>
+                        </div>
+                        <button 
+                          disabled={!selectedResumeId || isAnalyzing}
+                          onClick={handleStartAnalysis}
+                          className="w-full py-3 bg-executive-gold text-executive-navy font-bold rounded-xl flex items-center justify-center gap-2 hover:bg-white transition-all disabled:opacity-50"
+                        >
+                          {isAnalyzing ? <Loader2 className="w-5 h-5 animate-spin" /> : <FileSearch className="w-5 h-5" />}
+                          {lang === 'es' ? "Ejecutar Escaneo Intelectivo" : "Execute Intel Scan"}
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               </div>

@@ -240,7 +240,10 @@ export default function App() {
               <Bell className="w-5 h-5 text-slate-400" />
               <span className="absolute -top-0.5 -right-0.5 w-2 h-2 bg-executive-gold rounded-full border-2 border-white" />
             </div>
-            <button className="luxury-button !py-2 !px-5 gap-2 text-sm shadow-lg shadow-executive-navy/10">
+            <button 
+              onClick={() => setView(AppState.CLIENTS)}
+              className="luxury-button !py-2 !px-5 gap-2 text-sm shadow-lg shadow-executive-navy/10"
+            >
               <Plus className="w-4 h-4" />
               {lang === 'es' ? "Nuevo Análisis" : "New Analysis"}
             </button>
