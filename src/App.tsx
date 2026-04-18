@@ -3,9 +3,9 @@ import {
   FileText, Briefcase, RefreshCw, AlertTriangle, Maximize2, 
   Home, TrendingUp, BrainCircuit, CheckCircle, LayoutDashboard, 
   FileEdit, Target, ChevronRight, Menu, X, ShieldCheck, PieChart, Search, Sparkles, Layers, ArrowRight, Linkedin, PlayCircle, Globe,
-  UploadCloud, FileType, Check
+  UploadCloud, FileType, Check, Github
 } from 'lucide-react';
-import { AppState, ATSAnalysis, OptimizationResult, TailoredResult, LinkedInInsight, Language } from './types';
+import { AppState, ATSAnalysis, OptimizationResult, TailoredResult, LinkedInInsight, Language, GitHubInsight } from './types';
 import { UI_TEXTS } from './constants';
 import * as LocalEngine from './services/localEngine';
 import * as FileProcessingService from './services/fileProcessing';
@@ -14,6 +14,7 @@ import { CVDisplay } from './components/CVDisplay';
 import { AnalysisModal } from './components/AnalysisModal';
 import { VocationalReport } from './components/VocationalReport';
 import { LinkedInInsights } from './components/LinkedInInsights';
+import { GitHubInsights } from './components/GitHubInsights';
 import { ChatAssistant } from './components/ChatAssistant';
 
 const App: React.FC = () => {
@@ -25,6 +26,7 @@ const App: React.FC = () => {
   const [jobDescription, setJobDescription] = useState<string>('');
   const [tailoredResult, setTailoredResult] = useState<TailoredResult | null>(null);
   const [linkedInInsight, setLinkedInInsight] = useState<LinkedInInsight | null>(null);
+  const [gitHubInsight, setGitHubInsight] = useState<GitHubInsight | null>(null);
   
   const [isProcessing, setIsProcessing] = useState(false);
   const [processingMsg, setProcessingMsg] = useState('');
@@ -60,6 +62,7 @@ const App: React.FC = () => {
     setJobDescription('');
     setTailoredResult(null);
     setLinkedInInsight(null);
+    setGitHubInsight(null);
     setErrorMsg(null);
     setSuccessMsg(null);
   };
@@ -182,6 +185,24 @@ const App: React.FC = () => {
     }
   };
 
+  const handleGitHubAnalysis = async () => {
+    if (!analysis && !cvText) { setCurrentState(AppState.INPUT); return; }
+    if (gitHubInsight) { setCurrentState(AppState.GITHUB); return; }
+
+    setIsProcessing(true);
+    setProcessingMsg(t.connectGitHub);
+    try {
+       const insights = await LocalEngine.getGitHubInsights(optimizedCV?.markdownCV || cvText, lang);
+       setGitHubInsight(insights);
+       setCurrentState(AppState.GITHUB);
+    } catch (e) {
+       setErrorMsg(lang === 'es' ? "Error conectando con GitHub Neural Core." : "GitHub error.");
+    } finally {
+       setIsProcessing(false);
+       setProcessingMsg('');
+    }
+  };
+
   const NavItem = ({ state, icon: Icon, label, onClickOverride }: { state?: AppState, icon: any, label: string, onClickOverride?: () => void }) => (
     <button 
       onClick={onClickOverride ? () => { onClickOverride(); if(window.innerWidth < 768) setIsSidebarOpen(false); } : () => state && handleNavClick(state)}
@@ -257,6 +278,7 @@ const App: React.FC = () => {
           <NavItem state={AppState.RESULTS} icon={LayoutDashboard} label={t.navResults} />
           <NavItem state={AppState.TAILORING} icon={Target} label={t.navTailor} />
           <NavItem state={AppState.LINKEDIN} icon={Linkedin} label={t.navLinkedIn} onClickOverride={handleLinkedInAnalysis} />
+          <NavItem state={AppState.GITHUB} icon={Github} label={t.navGitHub} onClickOverride={handleGitHubAnalysis} />
         </nav>
 
         <div className="p-4 border-t border-indigo-50">
@@ -527,6 +549,28 @@ const App: React.FC = () => {
                      </div>
                 ) : (
                     <LinkedInInsights data={linkedInInsight} lang={lang} />
+                )}
+             </div>
+          )}
+
+          {currentState === AppState.GITHUB && (
+             <div className="h-full animate-in fade-in slide-in-from-right-4 duration-500">
+                {!gitHubInsight ? (
+                     <div className="h-full flex flex-col items-center justify-center p-12 text-center bg-white rounded-container shadow-vibrant border-4 border-slate-100">
+                         <div className="relative mb-10 group">
+                            <div className="p-8 bg-slate-900 rounded-full group-hover:bg-slate-700 transition-all duration-700"><Github className="text-white" size={80} /></div>
+                            <div className="absolute inset-0 bg-slate-900 blur-3xl opacity-10 -z-10 animate-pulse"></div>
+                         </div>
+                         <h3 className="text-3xl font-black text-text-main tracking-tighter uppercase mb-4">{t.connectGitHub}</h3>
+                         <p className="text-text-muted max-w-sm font-bold uppercase tracking-widest text-[10px] leading-relaxed">{t.githubSubtitle}</p>
+                         <div className="mt-10 flex gap-4">
+                            <div className="w-3 h-3 bg-slate-900 rounded-full animate-bounce"></div>
+                            <div className="w-3 h-3 bg-slate-500 rounded-full animate-bounce delay-100"></div>
+                            <div className="w-3 h-3 bg-slate-300 rounded-full animate-bounce delay-200"></div>
+                         </div>
+                     </div>
+                ) : (
+                    <GitHubInsights data={gitHubInsight} lang={lang} />
                 )}
              </div>
           )}

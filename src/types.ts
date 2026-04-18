@@ -3,7 +3,8 @@ export enum AppState {
   ANALYZING = 'ANALYZING',
   RESULTS = 'RESULTS',
   TAILORING = 'TAILORING',
-  LINKEDIN = 'LINKEDIN'
+  LINKEDIN = 'LINKEDIN',
+  GITHUB = 'GITHUB'
 }
 
 export type Language = 'es' | 'en';
@@ -88,4 +89,14 @@ export interface LinkedInInsight {
   contentIdeas: string[];
   skillGapsForMarket: string[];
   viralPotentialScore: number;
+}
+
+export interface GitHubInsight {
+  suggestedBio: string;
+  topRepoIdeas: string[];
+  readmeStructure: string;
+  contributionStrategy: string;
+  techKeywords: string[];
+  ossRecs: string[];
+  devPulseScore: number;
 }

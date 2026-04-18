@@ -3,6 +3,7 @@ import {
   ChatMessage,
   Language,
   LinkedInInsight,
+  GitHubInsight,
   MatchVerification,
   OptimizationResult,
   SectionScore,
@@ -404,6 +405,35 @@ export const getLinkedInInsights = async (cvText: string, lang: Language): Promi
     ],
     skillGapsForMarket: scoreKeywords(cvText).missing.slice(0, 8),
     viralPotentialScore: clamp(55 + terms.length * 4 + metricCount(cvText) * 3),
+  };
+};
+
+export const getGitHubInsights = async (cvText: string, lang: Language): Promise<GitHubInsight> => {
+  const terms = unique([...scoreKeywords(cvText).found, ...getTopTerms(cvText, 10)]).slice(0, 8);
+  const mainTech = terms[0] || "Software";
+  
+  return {
+    suggestedBio: lang === 'en' 
+      ? `Full-stack dev focused on ${mainTech} | Building scalable solutions and contributing to tech growth.`
+      : `Dev Full-stack enfocado en ${mainTech} | Construyendo soluciones escalables y contribuyendo al crecimiento tecnológico.`,
+    topRepoIdeas: [
+      `${mainTech} Automation Suite`,
+      `Personal Portfolio v4 (Neural)`,
+      `Open Source Contribution to ${terms[1] || 'Infrastructure'}`
+    ],
+    readmeStructure: lang === 'en' 
+      ? "Hi there! I'm [Name]. Expert in [Stack]. Currently building [Project]."
+      : "¡Hola! Soy [Nombre]. Experto en [Stack]. Actualmente construyendo [Proyecto].",
+    contributionStrategy: lang === 'en'
+      ? "Focus on high-impact repo maintenance and architectural PR callbacks."
+      : "Enfócate en mantenimiento de repos de alto impacto y callbacks de PR arquitectónicos.",
+    techKeywords: terms,
+    ossRecs: [
+      lang === 'en' ? "Contribute to React docs" : "Contribuir a docs de React",
+      "Tailwind UI components",
+      lang === 'en' ? "Express.js middleware refactor" : "Refactor de middleware de Express.js"
+    ],
+    devPulseScore: clamp(60 + terms.length * 5)
   };
 };
 
