@@ -49,10 +49,19 @@ export const extractTextFromPdf = async (file: File): Promise<string> => {
     const page = await pdf.getPage(i);
     const textContent = await page.getTextContent();
     
-    // Sort items by vertical position to handle multi-column layouts better
-    // Note: detailed layout analysis is complex, this is a basic heuristic
-    const strings = textContent.items.map((item: any) => item.str);
-    fullText += strings.join(' ') + '\n\n';
+    // Improved sorting: Group items by vertical line (y-position) then sort by horizontal (x-position)
+    // Extracting transform: [scaleX, skewY, skewX, scaleY, translateX, translateY]
+    const items = textContent.items as any[];
+    
+    // Sort primarily by Y descending (top to bottom), secondarily by X (left to right)
+    items.sort((a, b) => {
+      const yDiff = b.transform[5] - a.transform[5];
+      if (Math.abs(yDiff) > 5) return yDiff; // Use a threshold for "same line"
+      return a.transform[4] - b.transform[4];
+    });
+
+    const pageText = items.map(item => item.str).join(' ');
+    fullText += pageText + '\n\n';
   }
 
   return preprocessText(fullText);

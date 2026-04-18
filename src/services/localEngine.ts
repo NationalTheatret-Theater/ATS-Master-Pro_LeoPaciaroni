@@ -17,45 +17,26 @@ type KeywordScore = {
 };
 
 const KEYWORD_BANK = [
-  "analytics",
-  "api",
-  "automatizacion",
-  "aws",
-  "azure",
-  "bi",
-  "comunicacion",
-  "crm",
-  "css",
-  "data",
-  "docker",
-  "excel",
-  "finanzas",
-  "gestion",
-  "github",
-  "html",
-  "javascript",
-  "kpi",
-  "liderazgo",
-  "marketing",
-  "node",
-  "power bi",
-  "project management",
-  "python",
-  "react",
-  "reporting",
-  "scrum",
-  "sql",
-  "stakeholders",
-  "typescript",
-  "ventas",
+  "analytics", "api", "automatizacion", "aws", "azure", "bi", "comunicacion", "crm", "css", "data", "docker", "excel", 
+  "finanzas", "gestion", "github", "html", "javascript", "kpi", "liderazgo", "marketing", "node", "power bi", 
+  "project management", "python", "react", "reporting", "scrum", "sql", "stakeholders", "typescript", "ventas",
+  "estrategia", "presupuesto", "planificacion", "operaciones", "logistica", "riesgos", "compliance", "calidad",
+  "agile", "kanban", "devops", "cloud", "seguridad", "infraestructura", "backend", "frontend", "fullstack",
+  "ia", "ml", "big data", "etl", "dashboards", "customer success", "retencion", "adquisicion", "seo", "sem",
+  "p&l", "ebitda", "auditoria", "contabilidad", "tesoreria", "rrhh", "reclutamiento", "talento", "payroll",
+  "ventas b2b", "ventas b2c", "negotiation", "account management", "product owner", "scrum master",
+  "design thinking", "ux", "ui", "figma", "adobe", "java", "c#", "php", "go", "ruby", "swift", "kotlin"
 ];
 
 const SECTION_PATTERNS = [
-  /experiencia|experience|work history|historial/i,
-  /educacion|education|formacion|academic/i,
-  /habilidades|skills|competencias|tools/i,
-  /proyectos|projects|portfolio/i,
-  /certificaciones|certifications|certificados/i,
+  /experiencia|experience|work history|historial|profesional|laboral/i,
+  /educacion|education|formacion|academic|universidad|estudios/i,
+  /habilidades|skills|competencias|tools|tecnologias|conocimientos/i,
+  /proyectos|projects|portfolio|trabajos/i,
+  /certificaciones|certifications|certificados|cursos|titulos/i,
+  /perfil|about|resumen|summary|objetivo|introduccion/i,
+  /idiomas|languages|lenguajes/i,
+  /contacto|contact|informacion personal/i,
 ];
 
 const SOFT_SKILLS = [
@@ -97,11 +78,15 @@ const ACTION_VERBS = [
 ];
 
 const ROLE_KEYWORDS: Array<{ role: string; industry: string; keywords: string[] }> = [
-  { role: "Analista de Datos", industry: "Business Intelligence", keywords: ["data", "sql", "excel", "power bi", "analytics", "kpi", "reporting"] },
-  { role: "Product Manager", industry: "Tecnologia", keywords: ["stakeholders", "roadmap", "scrum", "kpi", "usuario", "producto", "gestion"] },
-  { role: "Frontend Developer", industry: "Software", keywords: ["react", "typescript", "javascript", "html", "css", "api"] },
-  { role: "Operations Specialist", industry: "Operaciones", keywords: ["automatizacion", "procesos", "kpi", "excel", "gestion", "mejora"] },
-  { role: "Marketing Specialist", industry: "Growth", keywords: ["marketing", "crm", "campanas", "analytics", "ventas", "conversion"] },
+  { role: "Analista de Datos", industry: "Business Intelligence", keywords: ["data", "sql", "excel", "power bi", "analytics", "kpi", "reporting", "etl", "python"] },
+  { role: "Product Manager", industry: "Tecnologia", keywords: ["stakeholders", "roadmap", "scrum", "kpi", "usuario", "producto", "gestion", "agile", "backlog"] },
+  { role: "Frontend Developer", industry: "Software", keywords: ["react", "typescript", "javascript", "html", "css", "api", "ux", "ui", "git"] },
+  { role: "Backend Developer", industry: "Software", keywords: ["node", "api", "sql", "aws", "docker", "cloud", "java", "python", "microservicios"] },
+  { role: "Operations Specialist", industry: "Operaciones", keywords: ["automatizacion", "procesos", "kpi", "excel", "gestion", "mejora", "logistica", "planificacion"] },
+  { role: "Marketing Specialist", industry: "Growth", keywords: ["marketing", "crm", "campanas", "analytics", "ventas", "conversion", "seo", "sem", "adquisicion"] },
+  { role: "HR / Recruitment", industry: "Recursos Humanos", keywords: ["talento", "reclutamiento", "payroll", "rrhh", "gestion", "comunicacion", "entrevistas"] },
+  { role: "Finance Manager", industry: "Finanzas", keywords: ["presupuesto", "p&l", "ebitda", "auditoria", "contabilidad", "tesoreria", "finanzas", "analisis"] },
+  { role: "Customer Success", industry: "Servicios", keywords: ["retencion", "clientes", "feedback", "soporte", "crm", "fidelizacion", "gestion"] },
 ];
 
 const normalize = (value: string) =>
@@ -164,9 +149,28 @@ const extractJobKeywords = (jobDescription: string) => {
   return terms.slice(0, 18);
 };
 
-const countSections = (text: string) => SECTION_PATTERNS.filter((pattern) => pattern.test(text)).length;
+const countSections = (text: string) => {
+  const normalizedText = normalize(text);
+  return SECTION_PATTERNS.filter((pattern) => pattern.test(normalizedText)).length;
+};
 
-const metricCount = (text: string) => (text.match(/(\d+%|\$ ?\d+|\d+\+|\d+x|\d+ personas|\d+ clients|\d+ usuarios)/gi) || []).length;
+const metricCount = (text: string) => {
+  // Enhanced to catch more business-critical numbers
+  const patterns = [
+    /\d+%/g,                    // Percentages
+    /\$ ?\d+/g,                 // Currency
+    /\d+ ?(k|m|b|ms|s)/gi,      // Scale/Time
+    /\d+\+/g,                   // Numbers+
+    /\d+x/gi,                   // Scale factor
+    /\d+ (personas|clients|usuarios|users|customers|leads|projects|proyectos|years|años)/gi // Contextual counts
+  ];
+  
+  let count = 0;
+  patterns.forEach(p => {
+    count += (text.match(p) || []).length;
+  });
+  return count;
+};
 
 const actionVerbCount = (text: string) => {
   const normalized = normalize(text);
@@ -174,8 +178,10 @@ const actionVerbCount = (text: string) => {
 };
 
 const buildSectionBreakdown = (text: string, keywordScore: KeywordScore) => {
-  const sectionsScore = clamp((countSections(text) / SECTION_PATTERNS.length) * 100);
-  const impactScore = clamp(metricCount(text) * 14 + actionVerbCount(text) * 5 + 25);
+  const detected = countSections(text);
+  const totalWeight = SECTION_PATTERNS.length - 2; // Allow skipping 2 minor sections for a perfect score
+  const sectionsScore = clamp((detected / totalWeight) * 100);
+  const impactScore = clamp(metricCount(text) * 12 + actionVerbCount(text) * 4 + 20);
   const readabilityScore = clamp(100 - Math.max(0, text.length - 4000) / 80);
   const structureStatus: SectionScore["status"] = sectionsScore > 75 ? "Excellent" : sectionsScore > 50 ? "Good" : sectionsScore > 25 ? "Improvement" : "Critical";
 
@@ -308,7 +314,7 @@ export const analyzeCV = async (cvText: string, lang: Language): Promise<ATSAnal
     criticalIssues: [
       !hasContact ? (lang === "en" ? "Contact information was not clearly detected." : "No se detecto informacion de contacto clara.") : "",
       metricCount(cvText) < 2 ? (lang === "en" ? "Few measurable achievements detected." : "Se detectaron pocos logros medibles.") : "",
-      countSections(cvText) < 3 ? (lang === "en" ? "The CV needs clearer ATS sections." : "El CV necesita secciones ATS mas claras.") : "",
+      countSections(cvText) < 4 ? (lang === "en" ? "The CV needs clearer ATS sections (Experience, Education, Skills, Profile)." : "El CV necesita secciones ATS mas claras (Experiencia, Educacion, Habilidades, Perfil).") : "",
     ].filter(Boolean),
     improvementSuggestions: [
       lang === "en" ? "Use standard headings: Summary, Experience, Skills, Education and Certifications." : "Usa encabezados estandar: Resumen, Experiencia, Habilidades, Educacion y Certificaciones.",
