@@ -1,0 +1,6 @@
+{
+  "name": "ATS Master Pro",
+  "description": "Una aplicación avanzada para el análisis de currículums y la optimización para sistemas ATS (Applicant Tracking System). Soporta archivos PDF, Word y visualización de datos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": []
+}
