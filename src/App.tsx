@@ -94,7 +94,6 @@ export default function App() {
   const [view, setView] = useState<AppState>(AppState.DASHBOARD);
   const [lang, setLang] = useState<Language>('es');
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
-  const [apiStatus, setApiStatus] = useState<'checking' | 'ok' | 'error'>('checking');
 
   // Default Guest User for "Open Access" mode
   const GUEST_USER = {
@@ -105,15 +104,6 @@ export default function App() {
   };
 
   useEffect(() => {
-    // Health check on mount
-    fetch('/api/health')
-      .then(r => r.json())
-      .then(data => {
-        if (data.status === 'ok') setApiStatus('ok');
-        else setApiStatus('error');
-      })
-      .catch(() => setApiStatus('error'));
-
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       // If we have a real user, use it. Otherwise, use guest for open access.
       if (firebaseUser) {
@@ -233,18 +223,6 @@ export default function App() {
 
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto overflow-x-hidden">
-        {apiStatus === 'error' && (
-          <div className="bg-rose-600 text-white px-10 py-3 flex items-center justify-between animate-in slide-in-from-top duration-500">
-            <div className="flex items-center gap-3">
-              <AlertCircle className="w-5 h-5 text-white animate-pulse" />
-              <p className="text-sm font-bold">
-                {lang === 'es' 
-                  ? "ERROR ESTRUCTURAL: El motor de IA no responde correctamente (HTML detectado). Pulsa el botón 'Restart Server' en el panel lateral y refresca con F5." 
-                  : "STRUCTURAL ERROR: AI Engine not responding (HTML detected). Please click 'Restart Server' in the side panel and refresh with F5."}
-              </p>
-            </div>
-          </div>
-        )}
         <header className="h-20 bg-white/50 backdrop-blur-sm border-b border-slate-200 px-10 flex items-center justify-between sticky top-0 z-40">
           <div className="flex items-center gap-2">
             <span className="text-slate-400 text-sm font-medium">{lang === 'es' ? "Inicio /" : "Home /"}</span>

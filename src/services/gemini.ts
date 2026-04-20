@@ -2,47 +2,21 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { Language } from '../types';
 
 /**
- * Proxy for Backend Gemini Service
+ * Native Gemini Service (Frontend-first as per Skill Guidelines)
  */
 const TEXT_MODEL = "gemini-2.0-flash";
 
-async function callAIProxy(request: any) {
-  try {
-    const response = await fetch('/api/ai/generate', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(request)
-    });
-
-    if (!response.ok) {
-      let errorMsg = "Error en la comunicación con el servidor de IA";
-      try {
-        const errorData = await response.json();
-        errorMsg = errorData.message || errorData.error || errorMsg;
-      } catch (e) {
-        // If not JSON, it might be an HTML error page
-        const text = await response.text();
-        console.error("Server returned non-JSON error:", text.substring(0, 200));
-        errorMsg = `Error del servidor (${response.status}): El servidor no devolvió una respuesta válida. Verifica que el Secret 'LLAVE_EXPERTA' esté configurado y hayas pulsado 'Restart Server'.`;
-      }
-      throw new Error(errorMsg);
-    }
-
-    return await response.json();
-  } catch (err: any) {
-    if (err.message.includes('Unexpected token')) {
-      throw new Error("El servidor de IA devolvió un error de formato (HTML en lugar de JSON). Por favor, intenta pulsar 'Restart Server' en el panel lateral y refrescar la pestaña.");
-    }
-    throw err;
-  }
-}
+// Initialize AI with the environment-provided key
+const ai = new GoogleGenAI({ 
+  apiKey: process.env.GEMINI_API_KEY || '' 
+});
 
 export const geminiService = {
   /**
    * Módulo 3. Parsing inteligente del CV
    */
   async parseResume(text: string, lang: Language) {
-    const result = await callAIProxy({
+    const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
       config: {
@@ -97,14 +71,14 @@ export const geminiService = {
       }
     });
 
-    return JSON.parse(result.text);
+    return JSON.parse(response.text);
   },
 
   /**
    * Módulo 4. Parsing del job description
    */
   async parseJob(text: string, lang: Language) {
-    const result = await callAIProxy({
+    const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
       config: {
@@ -140,11 +114,11 @@ export const geminiService = {
       }
     });
 
-    return JSON.parse(result.text);
+    return JSON.parse(response.text);
   },
 
   /**
-   * Módulo 5-15: Executive Intelligence Core (MATCHING, SCORING, ALERTS, LINKEDIN, MARKET, ORIENTATION, CAREER MAP)
+   * Módulo 5-15: Executive Intelligence Core
    */
   async analyzeExecutive(resumeData: any, jobData: any | null, lang: Language) {
     const prompt = `Realiza un análisis integral del CV nivel EXECUTIVE ENGINE.
@@ -176,9 +150,9 @@ export const geminiService = {
        - rewrittenText: El texto ya optimizado (aplicado directamente).
     
     LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
-`;
+    `;
 
-    const result = await callAIProxy({
+    const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
@@ -326,7 +300,7 @@ export const geminiService = {
       }
     });
 
-    return JSON.parse(result.text);
+    return JSON.parse(response.text);
   },
 
   /**
@@ -341,7 +315,7 @@ export const geminiService = {
           ? `Adapta este CV específicamente para este aviso laboral. Prioriza lenguaje del aviso, logros relevantes y orden estratégico sin inventar información.`
           : `Tailor this resume specifically for this job notice. Prioritize job language, relevant achievements, and strategic ordering without inventing information.`);
 
-    const result = await callAIProxy({
+    const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [
         { role: "user", parts: [
@@ -357,6 +331,6 @@ export const geminiService = {
       }
     });
 
-    return result.text;
+    return response.text;
   }
 };
