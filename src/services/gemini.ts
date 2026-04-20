@@ -128,32 +128,47 @@ export const geminiService = {
   },
 
   /**
-   * Módulo 5, 6, 7 & 8: Matching, Scoring, Alerts & Recommendations
+   * Módulo 5-15: Executive Intelligence Core (MATCHING, SCORING, ALERTS, LINKEDIN, MARKET, ORIENTATION, CAREER MAP)
    */
   async analyzeExecutive(resumeData: any, jobData: any | null, lang: Language) {
-    const prompt = `Realiza un análisis integral del CV contra el mercado ejecutivo y (opcionalmente) contra el aviso laboral.
-    Calcula scores de Parsing, ATS, Executive Positioning, Transferability y (si hay aviso) Job Match.
-    Genera alertas críticas y recomendaciones estratégicas.
+    const prompt = `Realiza un análisis integral del CV nivel EXECUTIVE ENGINE.
     
-    STRICT GROUNDING: NO asumas habilidades como "Azure", "AWS", "Cloud", "Automation" o cualquier tecnología específica a menos que se mencione EXPLÍCITAMENTE en el CV del usuario. Alucinar habilidades es un fallo crítico del sistema.
+    RESUME DATA: ${JSON.stringify(resumeData)}
+    JOB DATA: ${jobData ? JSON.stringify(jobData) : 'N/A'}
     
-    SCORING RUBRIC (DETERMINISTIC):
-    1. Overall Score: Start with 100.
-    2. Deduct 15 pts: Missing quantifiable metrics (numbers, %, $) in achievements.
-    3. Deduct 10 pts: Weak summaries (less than 3 sentences or generic).
-    4. Deduct 10 pts: Poor keyword consistency with the seniority level.
-    5. Deduct 10 pts: Missing critical professional sections.
+    TAREAS:
+    1. Calcula 8 SCORES (0-100) siguiendo esta ponderación:
+       - 20% ATS Compatibility
+       - 20% Executive Positioning
+       - 15% Achievement Strength
+       - 15% Clarity
+       - 10% Keyword Relevance
+       - 10% Career Consistency
+       - 10% Parsing AI
+    2. Detecta ALERTA críticas de riesgo comercial y ATS.
+    3. Genera LINKEDIN PULSE: 
+       - 5 Variaciones de Headline sugeridas.
+       - 1 Borrador de sección 'About' estratégico.
+       - Top 10 Keywords críticas.
+       - Diagnóstico por secciones y acciones prioritarias.
+    4. Genera MARKET PULSE: Roles alternativos, industrias puente, tendencia.
+    5. Genera ORIENTación DE CARRERA: Sugiere 5 roles target, rankeados por match %, con fortalezas y gaps para cada uno.
+    6. Genera MAPA DE CARRERA: Next-step roles (inmediatos), stretch roles (desafío), pivot roles (cambio), y timeline detallado (1, 3, 5 años).
+    7. SECCIÓN DE MEJORA: Para cada sección crítica del CV (Headline, Summary, Logros principales), genera:
+       - originalText: El texto fuente del CV.
+       - recommendedChange: Explicación de qué cambiar y por qué.
+       - rewrittenText: El texto ya optimizado (aplicado directamente).
     
-    Resume Data: ${JSON.stringify(resumeData)}
-    Job Data: ${jobData ? JSON.stringify(jobData) : 'N/A'}`;
+    LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
+`;
 
     const result = await callAIProxy({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
-        systemInstruction: `Eres EXECUTIVE ATS INTELLIGENCE CORE. No inventas experiencia. No inflas seniority. Distingues entre problemas de redacción y brechas reales.
-        TODA la respuesta (fortalezas, brechas, alertas, recomendaciones) DEBE estar en ${lang === 'es' ? 'Español' : 'Inglés'}.
-        ${lang === 'es' ? 'Responde en Español.' : 'Respond in English.'}`,
+        systemInstruction: `Eres EXECUTIVE CV INTELLIGENCE ENGINE. Eres un experto en Outplacement y Executive Search Senior.
+        Tus diagnósticos son deterministicos y quirúrgicos. No usas lenguaje genérico.
+        TODA la respuesta debe estar en ${lang === 'es' ? 'Español' : 'Inglés'}.`,
         responseMimeType: "application/json",
         responseSchema: {
           type: Type.OBJECT,
@@ -163,9 +178,13 @@ export const geminiService = {
               properties: {
                 parsing: { type: Type.NUMBER },
                 ats: { type: Type.NUMBER },
-                jobMatch: { type: Type.NUMBER },
                 executive: { type: Type.NUMBER },
-                transferability: { type: Type.NUMBER }
+                achievements: { type: Type.NUMBER },
+                clarity: { type: Type.NUMBER },
+                keywords: { type: Type.NUMBER },
+                consistency: { type: Type.NUMBER },
+                personalization: { type: Type.NUMBER },
+                overall: { type: Type.NUMBER }
               }
             },
             strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
@@ -175,10 +194,7 @@ export const geminiService = {
               items: {
                 type: Type.OBJECT,
                 properties: {
-                  level: { 
-                    type: Type.STRING, 
-                    enum: lang === 'es' ? ["Critica", "Advertencia", "Info"] : ["Critical", "Warning", "Info"] 
-                  },
+                  level: { type: Type.STRING, enum: ["Critical", "Warning", "Info"] },
                   text: { type: Type.STRING },
                   explanation: { type: Type.STRING },
                   recommendation: { type: Type.STRING }
@@ -196,11 +212,28 @@ export const geminiService = {
                   impact: { type: Type.STRING },
                   scoreImprovement: { type: Type.STRING },
                   rewriteExample: { type: Type.STRING },
-                  priority: { 
-                    type: Type.STRING, 
-                    enum: lang === 'es' ? ["Alta", "Media", "Baja"] : ["High", "Medium", "Low"] 
-                  }
+                  priority: { type: Type.STRING, enum: ["High", "Medium", "Low"] }
                 }
+              }
+            },
+            linkedInPulse: {
+              type: Type.OBJECT,
+              properties: {
+                score: { type: Type.NUMBER },
+                diagnosis: {
+                  type: Type.OBJECT,
+                  properties: {
+                    headline: { type: Type.STRING },
+                    about: { type: Type.STRING },
+                    experience: { type: Type.STRING },
+                    skills: { type: Type.STRING }
+                  }
+                },
+                headlineSuggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                aboutRewrite: { type: Type.STRING },
+                topKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                priorityActions: { type: Type.ARRAY, items: { type: Type.STRING } }
               }
             },
             marketPulse: {
@@ -212,6 +245,64 @@ export const geminiService = {
                 softSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
                 demandLevel: { type: Type.STRING },
                 bridgeIndustries: { type: Type.ARRAY, items: { type: Type.STRING } }
+              }
+            },
+            careerOrientation: {
+              type: Type.OBJECT,
+              properties: {
+                roles: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      role: { type: Type.STRING },
+                      fitPercentage: { type: Type.NUMBER },
+                      fitReason: { type: Type.STRING },
+                      strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                      recommendation: { type: Type.STRING }
+                    }
+                  }
+                }
+              }
+            },
+            careerMap: {
+              type: Type.OBJECT,
+              properties: {
+                currentIdentity: { type: Type.STRING },
+                nextSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                stretchRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
+                pivotRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
+                consultingOptions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                timeline: {
+                  type: Type.OBJECT,
+                  properties: {
+                    year1: { type: Type.STRING },
+                    year3: { type: Type.STRING },
+                    year5: { type: Type.STRING }
+                  }
+                },
+                blockers: { type: Type.ARRAY, items: { type: Type.STRING } },
+                skillGaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                narrativeAdvice: { type: Type.STRING }
+              }
+            },
+            improvedCV: {
+              type: Type.OBJECT,
+              properties: {
+                sections: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      originalText: { type: Type.STRING },
+                      recommendedChange: { type: Type.STRING },
+                      rewrittenText: { type: Type.STRING }
+                    }
+                  }
+                },
+                fullATS: { type: Type.STRING },
+                fullExecutive: { type: Type.STRING }
               }
             }
           }

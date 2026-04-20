@@ -54,43 +54,70 @@ export interface JobDescription {
 export interface ExecutiveScores {
   parsing: number;
   ats: number;
-  jobMatch: number;
   executive: number;
-  transferability: number;
+  achievements: number;
+  clarity: number;
+  keywords: number;
+  consistency: number;
+  personalization: number;
+  overall: number;
 }
 
-export interface AnalysisAlert {
-  level: 'Critical' | 'Warning' | 'Info';
-  text: string;
-  explanation: string;
+export interface LinkedInPulse {
+  score: number;
+  diagnosis: {
+    headline: string;
+    about: string;
+    experience: string;
+    skills: string;
+  };
+  headlineSuggestions: string[];
+  aboutRewrite: string;
+  topKeywords: string[];
+  gaps: string[];
+  priorityActions: string[];
+}
+
+export interface SuggestedRole {
+  role: string;
+  fitPercentage: number;
+  fitReason: string;
+  strengths: string[];
+  gaps: string[];
   recommendation: string;
 }
 
-export interface CareerRecommendation {
-  section: string;
-  title: string;
-  why: string;
-  impact: string;
-  scoreImprovement: string;
-  rewriteExample: string;
-  priority: 'High' | 'Medium' | 'Low';
+export interface CareerOrientation {
+  roles: SuggestedRole[];
 }
 
-export interface MarketPulse {
-  alternativeRoles: string[];
-  trendingKeywords: string[];
-  hardSkills: string[];
-  softSkills: string[];
-  demandLevel: string;
-  typicalSalaryRange?: string;
-  bridgeIndustries: string[];
+export interface CareerMap {
+  currentIdentity: string;
+  nextSteps: string[];
+  stretchRoles: string[];
+  pivotRoles: string[];
+  consultingOptions: string[];
+  timeline: {
+    year1: string;
+    year3: string;
+    year5: string;
+  };
+  blockers: string[];
+  skillGaps: string[];
+  narrativeAdvice: string;
+}
+
+export interface ImprovedResume {
+  originalText: string;
+  recommendedChange: string;
+  rewrittenText: string;
 }
 
 export interface Analysis {
   id: string;
   clientId: string;
   resumeId: string;
-  jobDescriptionId?: string;
+  jobDescriptionId?: string | null;
   analysisName: string;
   scores: ExecutiveScores;
   strengths: string[];
@@ -98,7 +125,14 @@ export interface Analysis {
   alerts: AnalysisAlert[];
   recommendations: CareerRecommendation[];
   marketPulse?: MarketPulse;
-  benchmark?: any;
+  linkedInPulse?: LinkedInPulse;
+  careerOrientation?: CareerOrientation;
+  careerMap?: CareerMap;
+  improvedCV?: {
+    sections: ImprovedResume[];
+    fullATS: string;
+    fullExecutive: string;
+  };
   ownerId: string;
   createdAt: any;
 }

@@ -26,6 +26,7 @@ import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { processFile } from '../services/fileProcessing';
 import { geminiService } from '../services/gemini';
+import { ExecutiveReport } from './ExecutiveReport';
 
 interface ClientDetailProps {
   user: any;
@@ -45,6 +46,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
+  const [viewAnalysisId, setViewAnalysisId] = useState<string | null>(null);
 
   const fetchData = async () => {
     setLoading(true);
@@ -132,13 +134,17 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
         clientId: client.id,
         resumeId: selectedResumeId,
         jobDescriptionId: selectedJobId || null,
-        analysisName: job ? `${lang === 'es' ? 'Match:' : 'Match:'} ${job.title}` : (lang === 'es' ? 'Diagnóstico General' : 'General Diagnosis'),
+        analysisName: job ? (lang === 'es' ? `Match: ${job.title}` : `Match: ${job.title}`) : (lang === 'es' ? 'Diagnóstico General' : 'General Diagnosis'),
         scores: results.scores,
         strengths: results.strengths,
         gaps: results.gaps,
         alerts: results.alerts,
         recommendations: results.recommendations,
         marketPulse: results.marketPulse,
+        linkedInPulse: results.linkedInPulse,
+        careerOrientation: results.careerOrientation,
+        careerMap: results.careerMap,
+        improvedCV: results.improvedCV,
         ownerId: user.uid,
         createdAt: serverTimestamp()
       };
@@ -261,7 +267,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
                 ) : (
                   <div className="text-center py-12">
                     <p className="text-slate-400 mb-6 italic">
-                      {lang === 'es' ? "Sube un CV para comenzar el diagnóstico clínico." : "Secure or upload a resume to start the clinical diagnosis."}
+                      {lang === 'es' ? "Sube un CV para comenzar el diagnóstico clínico." : "Upload a resume to start the clinical diagnosis."}
                     </p>
                     <button onClick={() => setActiveTab('resumes')} className="luxury-button-outline !py-2">
                       {lang === 'es' ? "Subir Primer CV" : "Upload First Resume"}
@@ -270,28 +276,32 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
                 )}
               </div>
 
-              <div className="executive-card p-8">
-                <h3 className="text-xl font-serif mb-6 flex items-center gap-2">
-                  <TrendingUp className="w-6 h-6 text-executive-navy" />
-                  {lang === 'es' ? "Versionado de Carrera Reciente" : "Recent Career Versioning"}
-                </h3>
-                <div className="space-y-4">
-                  {resumes.slice(0, 3).map(r => (
-                    <div key={r.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group cursor-pointer">
-                      <div className="flex items-center gap-4">
-                        <div className="p-2 bg-white rounded-lg border border-slate-200">
-                          <FileText className="w-5 h-5 text-executive-navy" />
+              {resumes.length > 0 && (
+                <div className="executive-card p-8">
+                  <h3 className="text-xl font-serif mb-6 flex items-center gap-2">
+                    <TrendingUp className="w-6 h-6 text-executive-navy" />
+                    {lang === 'es' ? "Versionado de Carrera Reciente" : "Recent Career Versioning"}
+                  </h3>
+                  <div className="space-y-4">
+                    {resumes.slice(0, 5).map(r => (
+                      <div key={r.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors group cursor-pointer" onClick={() => setActiveTab('resumes')}>
+                        <div className="flex items-center gap-4">
+                          <div className="p-2 bg-white rounded-lg border border-slate-200 text-executive-navy group-hover:bg-executive-navy group-hover:text-executive-gold">
+                            <FileText className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-executive-navy">{r.versionName}</p>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                              {r.createdAt?.toDate ? new Date(r.createdAt.toDate()).toLocaleDateString() : 'Just now'}
+                            </p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-sm font-bold text-executive-navy">{r.versionName}</p>
-                          <p className="text-xs text-slate-400">{new Date(r.createdAt?.toDate()).toLocaleDateString()}</p>
-                        </div>
+                        <ChevronRight className="w-5 h-5 text-slate-300 group-hover:text-executive-navy transition-all" />
                       </div>
-                      <ArrowUpRight className="w-5 h-5 text-slate-300 group-hover:text-executive-gold transition-all" />
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="space-y-8">
@@ -470,57 +480,77 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
 
         {activeTab === 'analyses' && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
-             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-2xl font-serif text-executive-navy">
-                {lang === 'es' ? "Reportes de Inteligencia" : "Intelligence Reports"}
-              </h3>
-              <div className="flex items-center gap-3">
-                <span className="text-xs text-slate-400 font-medium">
-                  {lang === 'es' ? "Registros Históricos:" : "Historical Records:"} {analyses.length}
-                </span>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 gap-4">
-              {analyses.map(analysis => (
-                <div key={analysis.id} className="executive-card p-6 flex items-center justify-between group hover:border-executive-gold transition-all">
-                  <div className="flex items-center gap-6">
-                    <div className={cn(
-                      "w-16 h-16 rounded-2xl flex items-center justify-center font-serif text-2xl font-bold border",
-                      analysis.scores.jobMatch >= 80 ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-amber-50 border-amber-100 text-amber-600"
-                    )}>
-                      {Math.round(analysis.scores.jobMatch || analysis.scores.executive)}%
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-executive-navy text-lg">{analysis.analysisName}</h4>
-                      <p className="text-sm text-slate-500">{new Date(analysis.createdAt?.toDate()).toLocaleString()}</p>
-                      <div className="flex gap-4 mt-3">
-                         <div className="flex flex-col">
-                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                             {lang === 'es' ? "Compatibilidad ATS" : "ATS Compatibility"}
-                           </span>
-                           <span className="text-xs font-bold text-executive-navy">{analysis.scores.ats}%</span>
-                         </div>
-                         <div className="flex flex-col">
-                           <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
-                             {lang === 'es' ? "Presencia Ejecutiva" : "Executive Presence"}
-                           </span>
-                           <span className="text-xs font-bold text-executive-navy">{analysis.scores.executive}%</span>
-                         </div>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-4">
-                    <button className="luxury-button-outline !py-2 !px-5 gap-2 text-xs">
-                      <Download className="w-3.5 h-3.5" />
-                      {lang === 'es' ? "Exportar Reporte" : "Export Report"}
-                    </button>
-                    <button className="luxury-button !py-2 !px-5 gap-2 text-xs">
-                      {lang === 'es' ? "Ver Insights" : "Open Insights"} <ExternalLink className="w-3.5 h-3.5" />
-                    </button>
+             {viewAnalysisId ? (
+               <div className="space-y-6">
+                 <button 
+                  onClick={() => setViewAnalysisId(null)}
+                  className="flex items-center gap-2 text-sm font-bold text-executive-navy hover:text-executive-gold transition-colors"
+                 >
+                   <ArrowRight className="w-4 h-4 rotate-180" /> {lang === 'es' ? "Volver a Reportes" : "Back to Reports"}
+                 </button>
+                 <ExecutiveReport 
+                  analysis={analyses.find(a => a.id === viewAnalysisId)!} 
+                  lang={lang} 
+                 />
+               </div>
+             ) : (
+               <>
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-2xl font-serif text-executive-navy">
+                    {lang === 'es' ? "Reportes de Inteligencia" : "Intelligence Reports"}
+                  </h3>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-slate-400 font-medium">
+                      {lang === 'es' ? "Registros Históricos:" : "Historical Records:"} {analyses.length}
+                    </span>
                   </div>
                 </div>
-              ))}
-            </div>
+                <div className="grid grid-cols-1 gap-4">
+                  {analyses.map(analysis => (
+                    <div key={analysis.id} className="executive-card p-6 flex items-center justify-between group hover:border-executive-gold transition-all">
+                      <div className="flex items-center gap-6">
+                        <div className={cn(
+                          "w-16 h-16 rounded-2xl flex items-center justify-center font-serif text-2xl font-bold border",
+                          analysis.scores.overall >= 80 ? "bg-emerald-50 border-emerald-100 text-emerald-600" : "bg-amber-50 border-amber-100 text-amber-600"
+                        )}>
+                          {Math.round(analysis.scores.overall)}%
+                        </div>
+                        <div>
+                          <h4 className="font-bold text-executive-navy text-lg">{analysis.analysisName}</h4>
+                          <p className="text-sm text-slate-500">{analysis.createdAt?.toDate ? new Date(analysis.createdAt.toDate()).toLocaleString() : 'Recent'}</p>
+                          <div className="flex gap-4 mt-3">
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                {lang === 'es' ? "Compatibilidad ATS" : "ATS Compatibility"}
+                              </span>
+                              <span className="text-xs font-bold text-executive-navy">{analysis.scores.ats}%</span>
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tight">
+                                {lang === 'es' ? "Posición Ejecutiva" : "Executive Positioning"}
+                              </span>
+                              <span className="text-xs font-bold text-executive-navy">{analysis.scores.executive}%</span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-4">
+                        <button className="luxury-button-outline !py-2 !px-5 gap-2 text-xs">
+                          <Download className="w-3.5 h-3.5" />
+                          {lang === 'es' ? "Exportar Reporte" : "Export Report"}
+                        </button>
+                        <button 
+                          onClick={() => setViewAnalysisId(analysis.id)}
+                          className="luxury-button !py-2 !px-5 gap-2 text-xs"
+                        >
+                          {lang === 'es' ? "Abrir Engine Report" : "Open Engine Report"} <ExternalLink className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+               </>
+             )}
           </motion.div>
         )}
       </AnimatePresence>
