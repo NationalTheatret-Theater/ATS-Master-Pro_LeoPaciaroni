@@ -6,9 +6,15 @@ import { Language } from '../types';
  */
 const TEXT_MODEL = "gemini-2.0-flash";
 
-// Robust API Key recovery for Frontend
+// Robust API Key recovery for Frontend (Hybrid Strategy)
 const getFrontendApiKey = (): string => {
-  // Try platform-standard keys first, then user-custom keys
+  // 1. Check the Dynamic Runtime Bridge (Highest Priority)
+  const dynamicConfig = (window as any).__ENGINE_CONFIG__;
+  if (dynamicConfig?.GEMINI_API_KEY && dynamicConfig.GEMINI_API_KEY.length > 5) {
+    return dynamicConfig.GEMINI_API_KEY;
+  }
+
+  // 2. Check build-time injected keys (Fallback)
   const key = process.env.GEMINI_API_KEY || 
               process.env.LLAVE_EXPERTA || 
               (process.env as any).VITE_LLAVE_EXPERTA || 
@@ -23,22 +29,25 @@ const getFrontendApiKey = (): string => {
 
 const apiKey = getFrontendApiKey();
 
-// Initialize AI with safe fallback to prevent module-load crash
-// The real check happens with ensureApiKey() before any usage
+// Initialize AI with safe fallback
 const ai = new GoogleGenAI({ 
-  apiKey: apiKey || 'AIza_placeholder_for_startup_diagnostics_only' 
+  apiKey: apiKey || 'AIza_STABLE_PLACEHOLDER' 
 });
 
 // Guard function to check key before any call
 const ensureApiKey = () => {
   const currentKey = getFrontendApiKey();
+  const lastUpdate = (window as any).__ENGINE_CONFIG__?.lastUpdated || 'No detectada';
+  
   if (!currentKey || currentKey.length < 10) {
     throw new Error(
-      "No se detectó la llave de IA (API KEY). Por favor:\n\n" +
-      "1. Ve al panel de 'Secrets' (icono 🔑 arriba a la derecha).\n" +
-      "2. Asegúrate de que existe el nombre 'LLAVE_EXPERTA' y su valor sea tu código AIza...\n" +
-      "3. Pulsa el botón 'Restart Server' en el panel lateral.\n" +
-      "4. Refresca esta pestaña con F5."
+      "SISTEMA SIN LLAVE DETECTADA.\n\n" +
+      "He detectado que el servidor inició, pero la llave no está pasando al motor.\n\n" +
+      "PASOS CRÍTICOS:\n" +
+      "1. Verifica que el Secret se llame LLAVE_EXPERTA (todo mayúsculas).\n" +
+      "2. Pulsa 'Restart Server' (icono flecha circular arriba).\n" +
+      "3. REFRESCAR CON F5 (importante).\n\n" +
+      `Sincronización: ${lastUpdate}`
     );
   }
 };

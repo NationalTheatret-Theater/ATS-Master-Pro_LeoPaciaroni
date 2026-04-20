@@ -26,7 +26,22 @@ async function startServer() {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
   });
 
-  // 404 Guard for API routes to prevent falling through to SPA index
+  // Runtime Environment Bridge
+  // Serves environment secrets to the frontend dynamically
+  app.get('/env-config.js', (req, res) => {
+    const key = process.env.GEMINI_API_KEY || 
+                process.env.LLAVE_EXPERTA || 
+                process.env.VITE_LLAVE_EXPERTA || 
+                "";
+    
+    res.setHeader('Content-Type', 'application/javascript');
+    res.send(`window.__ENGINE_CONFIG__ = { 
+  GEMINI_API_KEY: "${key}",
+  lastUpdated: "${new Date().toISOString()}" 
+};`);
+  });
+
+  // 404 Guard for API routes
   app.all('/api/*', (req, res) => {
     res.status(404).json({ error: 'Not Found' });
   });
