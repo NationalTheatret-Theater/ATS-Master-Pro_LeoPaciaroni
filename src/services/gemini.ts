@@ -1,47 +1,37 @@
 import { GoogleGenAI, Type } from "@google/genai";
-import { Language, Analysis, Client, Resume, JobDescription, ExecutiveScores, AnalysisAlert, CareerRecommendation, MarketPulse } from '../types';
+import { Language } from '../types';
 
-let aiInstance: GoogleGenAI | null = null;
+/**
+ * Proxy for Backend Gemini Service
+ */
+const TEXT_MODEL = "gemini-2.0-flash";
 
-function getAI(): GoogleGenAI {
-  if (!aiInstance) {
-    // Try both define-wrapped process.env and the new global bridge
-    let apiKey = process.env.GEMINI_API_KEY;
-    
-    // Fallback if the process.env replacement fails
-    if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey === '') {
-      try {
-        // @ts-ignore - this is defined in vite.config.ts
-        apiKey = __GEMINI_API_KEY__;
-      } catch (e) {
-        // ignore
-      }
-    }
-    
-    if (!apiKey || apiKey === 'undefined' || apiKey === 'null' || apiKey === '') {
-      throw new Error("No se detectó la llave de IA. Por favor, asegúrate de que el Secret 'LLAVE_EXPERTA' tenga tu código AIza... luego pulsa 'Restart Server' y refresca la pestaña.");
-    }
-    aiInstance = new GoogleGenAI({ apiKey });
+async function callAIProxy(request: any) {
+  const response = await fetch('/api/ai/generate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(request)
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(errorData.message || errorData.error || "Error en la comunicación con el servidor de IA");
   }
-  return aiInstance;
-}
 
-// MODEL SELECTION
-const TEXT_MODEL = "gemini-3-flash-preview";
+  return await response.json();
+}
 
 export const geminiService = {
   /**
    * Módulo 3. Parsing inteligente del CV
    */
   async parseResume(text: string, lang: Language) {
-    const prompt = `Analiza este CV profesional o ejecutivo. Extrae estructura, experiencia, fechas, cargos, logros, skills, seniority, alcance, liderazgo, industrias, educación, idiomas, brechas, consistencia de carrera y señales de posicionamiento ejecutivo. 
-    Devuelve un JSON estructurado.`;
-
-    const response = await getAI().models.generateContent({
+    const result = await callAIProxy({
       model: TEXT_MODEL,
-      contents: text,
+      contents: [{ role: "user", parts: [{ text }] }],
       config: {
-        systemInstruction: `Eres un experto Headhunter Senior con 20 años de experiencia en recruiting ejecutivo (C-Level). Tu objetivo es parsear CVs con precisión quirúrgica.
+        systemInstruction: `Eres un experto Headhunter Senior con 20 años de experiencia en recruiting ejecutivo (C-Level). Tu objetivo es parsear CVs con precisión quirúrgica. 
+        Analiza este CV profesional o ejecutivo. Extrae estructura, experiencia, fechas, cargos, logros, skills, seniority, alcance, liderazgo, industrias, educación, idiomas, brechas, consistencia de carrera y señales de posicionamiento ejecutivo. 
         TODA la información extraída (roles, logros, resúmenes, etc.) DEBE estar en ${lang === 'es' ? 'Español' : 'Inglés'}.`,
         responseMimeType: "application/json",
         responseSchema: {
@@ -91,20 +81,19 @@ export const geminiService = {
       }
     });
 
-    return JSON.parse(response.text);
+    return JSON.parse(result.text);
   },
 
   /**
    * Módulo 4. Parsing del job description
    */
   async parseJob(text: string, lang: Language) {
-    const prompt = `Analiza este aviso laboral. Extrae cargo, seniority, requisitos, competencias, keywords ATS, años de experiencia, idiomas, conocimientos técnicos, tipo de empresa, alcance del rol y problema de negocio implícito. Clasifica requisitos en obligatorio, importante, deseable y accesorio.`;
-
-    const response = await getAI().models.generateContent({
+    const result = await callAIProxy({
       model: TEXT_MODEL,
-      contents: text,
+      contents: [{ role: "user", parts: [{ text }] }],
       config: {
         systemInstruction: `Eres un estratega de talento experto en analizar 'Job Descriptions' para identificar el dolor real de negocio que busca resolver la empresa.
+        Analiza este aviso laboral. Extrae cargo, seniority, requisitos, competencias, keywords ATS, años de experiencia, idiomas, conocimientos técnicos, tipo de empresa, alcance del rol y problema de negocio implícito. Clasifica requisitos en obligatorio, importante, deseable y accesorio.
         TODA la información extraída DEBE estar en ${lang === 'es' ? 'Español' : 'Inglés'}.`,
         responseMimeType: "application/json",
         responseSchema: {
@@ -135,7 +124,7 @@ export const geminiService = {
       }
     });
 
-    return JSON.parse(response.text);
+    return JSON.parse(result.text);
   },
 
   /**
@@ -158,9 +147,9 @@ export const geminiService = {
     Resume Data: ${JSON.stringify(resumeData)}
     Job Data: ${jobData ? JSON.stringify(jobData) : 'N/A'}`;
 
-    const response = await getAI().models.generateContent({
+    const result = await callAIProxy({
       model: TEXT_MODEL,
-      contents: prompt,
+      contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
         systemInstruction: `Eres EXECUTIVE ATS INTELLIGENCE CORE. No inventas experiencia. No inflas seniority. Distingues entre problemas de redacción y brechas reales.
         TODA la respuesta (fortalezas, brechas, alertas, recomendaciones) DEBE estar en ${lang === 'es' ? 'Español' : 'Inglés'}.
@@ -230,7 +219,7 @@ export const geminiService = {
       }
     });
 
-    return JSON.parse(response.text);
+    return JSON.parse(result.text);
   },
 
   /**
@@ -245,12 +234,14 @@ export const geminiService = {
           ? `Adapta este CV específicamente para este aviso laboral. Prioriza lenguaje del aviso, logros relevantes y orden estratégico sin inventar información.`
           : `Tailor this resume specifically for this job notice. Prioritize job language, relevant achievements, and strategic ordering without inventing information.`);
 
-    const response = await getAI().models.generateContent({
+    const result = await callAIProxy({
       model: TEXT_MODEL,
       contents: [
-        { text: `CV Original: ${resumeRaw}` },
-        { text: jobRaw ? `Job Description: ${jobRaw}` : '' },
-        { text: prompt }
+        { role: "user", parts: [
+          { text: `CV Original: ${resumeRaw}` },
+          { text: jobRaw ? `Job Description: ${jobRaw}` : '' },
+          { text: prompt }
+        ]}
       ],
       config: {
         systemInstruction: lang === 'es' 
@@ -259,6 +250,6 @@ export const geminiService = {
       }
     });
 
-    return response.text;
+    return result.text;
   }
 };

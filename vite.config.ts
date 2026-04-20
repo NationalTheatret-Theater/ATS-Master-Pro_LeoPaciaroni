@@ -23,7 +23,11 @@ export default defineConfig(({mode}) => {
     base: './',
     plugins: [react(), tailwindcss()],
     define: {
-      'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || process.env.LLAVE_EXPERTA || env.LLAVE_EXPERTA || ""),
+      'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || ""),
+      'process.env.VITE_GEMINI_API_KEY': JSON.stringify(process.env.VITE_GEMINI_API_KEY || env.VITE_GEMINI_API_KEY || ""),
+      'process.env.LLAVE_EXPERTA': JSON.stringify(process.env.LLAVE_EXPERTA || env.LLAVE_EXPERTA || ""),
+      'process.env.VITE_LLAVE_EXPERTA': JSON.stringify(process.env.VITE_LLAVE_EXPERTA || env.VITE_LLAVE_EXPERTA || ""),
+      'process.env.NEXT_PUBLIC_GEMINI_API_KEY': JSON.stringify(process.env.NEXT_PUBLIC_GEMINI_API_KEY || env.NEXT_PUBLIC_GEMINI_API_KEY || ""),
       '__GEMINI_API_KEY__': JSON.stringify(process.env.GEMINI_API_KEY || env.GEMINI_API_KEY || process.env.LLAVE_EXPERTA || env.LLAVE_EXPERTA || ""),
     },
     resolve: {
