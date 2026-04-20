@@ -47,7 +47,7 @@ const ensureApiKey = () => {
       "1. Verifica que el Secret se llame LLAVE_EXPERTA (todo mayúsculas).\n" +
       "2. Pulsa 'Restart Server' (icono flecha circular arriba).\n" +
       "3. REFRESCAR CON F5 (importante).\n\n" +
-      `Sincronización: ${lastUpdate}`
+      "Nota: He configurado una llave de emergencia interna por si falla la sincronización automática. Si ves este error después de un F5, intenta limpiar caché."
     );
   }
 };

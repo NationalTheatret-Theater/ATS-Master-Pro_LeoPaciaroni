@@ -10,7 +10,31 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Use JSON middleware
+  // 1. EMERGENCY CONFIG BRIDGE (MUST BE FIRST)
+  // This serves the API key to the frontend dynamically from the server environment
+  app.get('/env-config.js', (req, res) => {
+    // Priority: Live Secret > User Provided Fallback
+    const userProvidedKey = "AIzaSyD80-zuJymR0tcaWtGfleHR7pDLW5zl4BE";
+    const key = process.env.GEMINI_API_KEY || 
+                process.env.LLAVE_EXPERTA || 
+                process.env.VITE_LLAVE_EXPERTA || 
+                userProvidedKey;
+    
+    console.log(`[Bridge] Serving environment bridge (Key length: ${key.length})`);
+    
+    res.setHeader('Content-Type', 'application/javascript');
+    res.setHeader('Cache-Control', 'no-store');
+    res.send(`
+      console.log('Executive Engine Bridge Activated');
+      window.__ENGINE_CONFIG__ = { 
+        GEMINI_API_KEY: "${key}",
+        lastUpdated: "${new Date().toISOString()}",
+        source: "${process.env.LLAVE_EXPERTA ? 'environment' : 'fallback'}"
+      };
+    `);
+  });
+
+  // 2. MIDDLEWARES
   app.use(express.json());
 
   // Debug middleware
@@ -24,21 +48,6 @@ async function startServer() {
   // Health Check
   app.get('/api/health', (req, res) => {
     res.json({ status: 'ok', timestamp: new Date().toISOString() });
-  });
-
-  // Runtime Environment Bridge
-  // Serves environment secrets to the frontend dynamically
-  app.get('/env-config.js', (req, res) => {
-    const key = process.env.GEMINI_API_KEY || 
-                process.env.LLAVE_EXPERTA || 
-                process.env.VITE_LLAVE_EXPERTA || 
-                "";
-    
-    res.setHeader('Content-Type', 'application/javascript');
-    res.send(`window.__ENGINE_CONFIG__ = { 
-  GEMINI_API_KEY: "${key}",
-  lastUpdated: "${new Date().toISOString()}" 
-};`);
   });
 
   // 404 Guard for API routes
