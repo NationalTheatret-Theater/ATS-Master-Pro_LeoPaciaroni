@@ -1,6 +1,6 @@
 import express from 'express';
 import { createServer as createViteServer } from 'vite';
-import { GoogleGenAI, SchemaType } from '@google/genai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 import path from 'path';
 import fs from 'fs';
 import dotenv from 'dotenv';
@@ -35,14 +35,18 @@ async function startServer() {
 
   // Debug middleware
   app.use((req, res, next) => {
-    if (req.path.startsWith('/api')) {
-      console.log(`[API Request] ${req.method} ${req.path}`);
-    }
+    console.log(`[Incoming Request] ${req.method} ${req.path}`);
     next();
+  });
+
+  // Health Check
+  app.get('/api/health', (req, res) => {
+    res.json({ status: 'ok', serverTime: new Date().toISOString() });
   });
 
   // API Proxy for Gemini
   app.post('/api/ai/generate', async (req, res) => {
+    console.log('[API/AI] Received generation request');
     try {
       const apiKey = getApiKey();
       if (!apiKey) {
@@ -57,7 +61,7 @@ async function startServer() {
       
       console.log(`Calling Gemini with model: ${model}`);
       
-      const genAI = new GoogleGenAI(apiKey);
+      const genAI = new GoogleGenerativeAI(apiKey);
       const aiModel = genAI.getGenerativeModel({ model });
       
       const result = await aiModel.generateContent({
@@ -87,6 +91,15 @@ async function startServer() {
       hasKey: !!getApiKey(),
       keyStart: getApiKey().substring(0, 5) + '...',
       envKeys: Object.keys(process.env).filter(k => k.includes('GEMINI') || k.includes('LLAVE'))
+    });
+  });
+
+  // 404 Guard for API routes to prevent falling through to SPA index
+  app.all('/api/*', (req, res) => {
+    res.status(404).json({ 
+      error: 'API Route Not Found', 
+      path: req.path,
+      method: req.method
     });
   });
 

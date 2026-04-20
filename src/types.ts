@@ -63,6 +63,33 @@ export interface ExecutiveScores {
   overall: number;
 }
 
+export interface AnalysisAlert {
+  level: 'Critical' | 'Warning' | 'Info';
+  text: string;
+  explanation: string;
+  recommendation: string;
+}
+
+export interface CareerRecommendation {
+  section: string;
+  title: string;
+  why: string;
+  impact: string;
+  scoreImprovement: string;
+  rewriteExample: string;
+  priority: 'High' | 'Medium' | 'Low';
+}
+
+export interface MarketPulse {
+  alternativeRoles: string[];
+  trendingKeywords: string[];
+  hardSkills: string[];
+  softSkills: string[];
+  demandLevel: string;
+  typicalSalaryRange?: string;
+  bridgeIndustries: string[];
+}
+
 export interface LinkedInPulse {
   score: number;
   diagnosis: {

@@ -11,6 +11,7 @@ import {
   Trash2, 
   Upload, 
   ChevronRight,
+  ArrowRight,
   Loader2,
   AlertCircle,
   FileSearch,
@@ -235,9 +236,9 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
                     <div className="grid grid-cols-3 gap-4">
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">
-                          {lang === 'es' ? "Último Match de Cargo" : "Last Job Match"}
+                          {lang === 'es' ? "Último Match Personalizado" : "Last Personalized Match"}
                         </p>
-                        <p className="text-2xl font-serif text-executive-navy">{analyses[0].scores.jobMatch}%</p>
+                        <p className="text-2xl font-serif text-executive-navy">{analyses[0].scores.personalization}%</p>
                       </div>
                       <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100">
                         <p className="text-[10px] font-bold text-slate-400 uppercase mb-1">

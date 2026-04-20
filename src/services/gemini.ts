@@ -7,18 +7,34 @@ import { Language } from '../types';
 const TEXT_MODEL = "gemini-2.0-flash";
 
 async function callAIProxy(request: any) {
-  const response = await fetch('/api/ai/generate', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(request)
-  });
+  try {
+    const response = await fetch('/api/ai/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(request)
+    });
 
-  if (!response.ok) {
-    const errorData = await response.json();
-    throw new Error(errorData.message || errorData.error || "Error en la comunicación con el servidor de IA");
+    if (!response.ok) {
+      let errorMsg = "Error en la comunicación con el servidor de IA";
+      try {
+        const errorData = await response.json();
+        errorMsg = errorData.message || errorData.error || errorMsg;
+      } catch (e) {
+        // If not JSON, it might be an HTML error page
+        const text = await response.text();
+        console.error("Server returned non-JSON error:", text.substring(0, 200));
+        errorMsg = `Error del servidor (${response.status}): El servidor no devolvió una respuesta válida. Verifica que el Secret 'LLAVE_EXPERTA' esté configurado y hayas pulsado 'Restart Server'.`;
+      }
+      throw new Error(errorMsg);
+    }
+
+    return await response.json();
+  } catch (err: any) {
+    if (err.message.includes('Unexpected token')) {
+      throw new Error("El servidor de IA devolvió un error de formato (HTML en lugar de JSON). Por favor, intenta pulsar 'Restart Server' en el panel lateral y refrescar la pestaña.");
+    }
+    throw err;
   }
-
-  return await response.json();
 }
 
 export const geminiService = {
