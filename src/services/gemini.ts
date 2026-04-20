@@ -6,16 +6,49 @@ import { Language } from '../types';
  */
 const TEXT_MODEL = "gemini-2.0-flash";
 
-// Initialize AI with the environment-provided key
+// Robust API Key recovery for Frontend
+const getFrontendApiKey = (): string => {
+  // Try platform-standard keys first, then user-custom keys
+  const key = process.env.GEMINI_API_KEY || 
+              process.env.LLAVE_EXPERTA || 
+              (process.env as any).VITE_LLAVE_EXPERTA || 
+              (process.env as any).VITE_GEMINI_API_KEY ||
+              (window as any).__GEMINI_API_KEY__;
+  
+  if (!key || key === 'undefined' || key === 'null' || key.length < 5) {
+    return '';
+  }
+  return key;
+};
+
+const apiKey = getFrontendApiKey();
+
+// Initialize AI with safe fallback to prevent module-load crash
+// The real check happens with ensureApiKey() before any usage
 const ai = new GoogleGenAI({ 
-  apiKey: process.env.GEMINI_API_KEY || '' 
+  apiKey: apiKey || 'AIza_placeholder_for_startup_diagnostics_only' 
 });
+
+// Guard function to check key before any call
+const ensureApiKey = () => {
+  const currentKey = getFrontendApiKey();
+  if (!currentKey || currentKey.length < 10) {
+    throw new Error(
+      "No se detectó la llave de IA (API KEY). Por favor:\n\n" +
+      "1. Ve al panel de 'Secrets' (icono 🔑 arriba a la derecha).\n" +
+      "2. Asegúrate de que existe el nombre 'LLAVE_EXPERTA' y su valor sea tu código AIza...\n" +
+      "3. Pulsa el botón 'Restart Server' en el panel lateral.\n" +
+      "4. Refresca esta pestaña con F5."
+    );
+  }
+};
 
 export const geminiService = {
   /**
    * Módulo 3. Parsing inteligente del CV
    */
   async parseResume(text: string, lang: Language) {
+    ensureApiKey();
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
@@ -78,6 +111,7 @@ export const geminiService = {
    * Módulo 4. Parsing del job description
    */
   async parseJob(text: string, lang: Language) {
+    ensureApiKey();
     const response = await ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
@@ -121,6 +155,7 @@ export const geminiService = {
    * Módulo 5-15: Executive Intelligence Core
    */
   async analyzeExecutive(resumeData: any, jobData: any | null, lang: Language) {
+    ensureApiKey();
     const prompt = `Realiza un análisis integral del CV nivel EXECUTIVE ENGINE.
     
     RESUME DATA: ${JSON.stringify(resumeData)}
@@ -307,6 +342,7 @@ export const geminiService = {
    * Módulo 9. Generación de CV mejorado
    */
   async optimizeResume(resumeRaw: string, jobRaw: string | null, type: 'ATS_OPTIMIZED' | 'TAILOR_MADE', lang: Language) {
+    ensureApiKey();
     const prompt = type === 'ATS_OPTIMIZED' 
       ? (lang === 'es' 
           ? `Optimiza este CV para que sea 100% compatible con ATS (Greenhouse, iCIMS) y tenga un fuerte impacto ejecutivo. Mejora estructura, redacción y claridad sin inventar experiencia.` 
