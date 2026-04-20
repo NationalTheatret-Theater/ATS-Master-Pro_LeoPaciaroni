@@ -11,27 +11,20 @@ async function startServer() {
   const PORT = 3000;
 
   // 1. EMERGENCY CONFIG BRIDGE (MUST BE FIRST)
-  // This serves the API key to the frontend dynamically from the server environment
   app.get('/env-config.js', (req, res) => {
-    // Priority: Live Secret > User Provided Fallback
-    const userProvidedKey = "AIzaSyD80-zuJymR0tcaWtGfleHR7pDLW5zl4BE";
     const key = process.env.GEMINI_API_KEY || 
                 process.env.LLAVE_EXPERTA || 
                 process.env.VITE_LLAVE_EXPERTA || 
-                userProvidedKey;
+                "AIzaSyD80-zuJymR0tcaWtGfleHR7pDLW5zl4BE";
     
-    console.log(`[Bridge] Serving environment bridge (Key length: ${key.length})`);
+    console.log(`[Bridge] CONFIG HIT at ${new Date().toISOString()}`);
     
     res.setHeader('Content-Type', 'application/javascript');
-    res.setHeader('Cache-Control', 'no-store');
-    res.send(`
-      console.log('Executive Engine Bridge Activated');
-      window.__ENGINE_CONFIG__ = { 
-        GEMINI_API_KEY: "${key}",
-        lastUpdated: "${new Date().toISOString()}",
-        source: "${process.env.LLAVE_EXPERTA ? 'environment' : 'fallback'}"
-      };
-    `);
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.send(`window.__ENGINE_CONFIG__ = { 
+  GEMINI_API_KEY: "${key}",
+  lastUpdated: "${new Date().toISOString()}"
+}; console.log('Executive Engine: Bridge Connected');`);
   });
 
   // 2. MIDDLEWARES
