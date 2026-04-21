@@ -86,7 +86,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
       
       if (type === 'resume') {
         const parsed = await geminiService.parseResume(rawText, lang);
-        await addDoc(collection(db, 'clients', client.id, 'resumes'), {
+        const docRef = await addDoc(collection(db, 'clients', client.id, 'resumes'), {
           clientId: client.id,
           fileName: file.name,
           fileType: file.name.endsWith('.pdf') ? 'pdf' : 'docx',
@@ -97,9 +97,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
           ownerId: user.uid,
           createdAt: serverTimestamp()
         });
+        setSelectedResumeId(docRef.id);
       } else {
         const parsed = await geminiService.parseJob(rawText, lang);
-        await addDoc(collection(db, 'clients', client.id, 'jobs'), {
+        const docRef = await addDoc(collection(db, 'clients', client.id, 'jobs'), {
           clientId: client.id,
           title: parsed.role || file.name,
           companyName: parsed.company || 'Unknown',
@@ -109,6 +110,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
           ownerId: user.uid,
           createdAt: serverTimestamp()
         });
+        setSelectedJobId(docRef.id);
       }
       fetchData();
     } catch (err) {
@@ -155,6 +157,7 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
       setActiveTab('analyses');
     } catch (err) {
       console.error(err);
+      alert(err instanceof Error ? err.message : (lang === 'es' ? 'Error al realizar el análisis' : 'Error performing analysis'));
     } finally {
       setIsAnalyzing(false);
     }

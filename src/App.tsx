@@ -201,6 +201,19 @@ export default function App() {
 
           <div className="flex items-center justify-between px-2">
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+              Executive engine
+            </span>
+            <div className={cn(
+              "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold",
+              (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
+            )}>
+              <div className={cn("w-1.5 h-1.5 rounded-full", (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
+              {(window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY ? "ONLINE" : "OFFLINE"}
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between px-2">
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               {lang === 'es' ? "Idioma" : "Language"}
             </span>
             <div className="flex gap-1 p-0.5 bg-slate-100 rounded-lg">

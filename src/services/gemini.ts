@@ -11,33 +11,37 @@ const TEXT_MODEL = "gemini-flash-latest";
 const getFrontendApiKey = (): string => {
   // 1. Check the Dynamic Runtime Bridge (Current Environment)
   const dynamicConfig = (window as any).__ENGINE_CONFIG__;
-  if (dynamicConfig?.GEMINI_API_KEY && dynamicConfig.GEMINI_API_KEY.length > 20) {
-    console.log('[Gemini] Key found via dynamic bridge');
-    return dynamicConfig.GEMINI_API_KEY;
+  const bridgeKey = dynamicConfig?.GEMINI_API_KEY;
+  
+  if (bridgeKey && bridgeKey.length > 10) {
+    console.log(`[Gemini] Key detected via Dynamic Bridge (Prefix: ${bridgeKey.substring(0, 4)}...)`);
+    return bridgeKey;
   }
 
   // 2. Check build-time injected keys
-  const key = process.env.GEMINI_API_KEY || 
-              process.env.LLAVE_EXPERTA || 
-              (process.env as any).VITE_LLAVE_EXPERTA || 
-              (process.env as any).VITE_GEMINI_API_KEY ||
-              (window as any).__GEMINI_API_KEY__;
+  const envKey = process.env.GEMINI_API_KEY || 
+                 process.env.LLAVE_EXPERTA || 
+                 (process.env as any).VITE_LLAVE_EXPERTA || 
+                 (process.env as any).VITE_GEMINI_API_KEY ||
+                 (window as any).__GEMINI_API_KEY__;
   
-  if (key && key.length > 20 && key.startsWith('AIza')) {
-    console.log('[Gemini] Key found via environment/injected variables');
-    return key;
+  if (envKey && envKey.length > 10) {
+    console.log(`[Gemini] Key detected via Environment/Build (Prefix: ${envKey.substring(0, 4)}...)`);
+    return envKey;
   }
 
+  console.warn('[Gemini] No valid API Key found in any source.');
   return '';
 };
 
 // Lazy initialization of AI client to prevent startup crashes
 let aiInstance: GoogleGenAI | null = null;
 const getAiClient = () => {
-  if (!aiInstance) {
-    const key = getFrontendApiKey();
+  const currentKey = getFrontendApiKey();
+  // Always recreate instance if key changes or was empty
+  if (!aiInstance || (currentKey && currentKey.length > 10)) {
     aiInstance = new GoogleGenAI({ 
-      apiKey: key || 'PENDING_KEY'
+      apiKey: currentKey || 'PENDING_VALIDATION'
     });
   }
   return aiInstance;
@@ -47,17 +51,17 @@ const getAiClient = () => {
 const ensureApiKey = () => {
   const currentKey = getFrontendApiKey();
   
-  if (!currentKey || currentKey.length < 20) {
+  if (!currentKey || currentKey.length < 10) {
     const errorMsg = "NUEVA LLAVE REQUERIDA (SEGURIDAD).\n\n" +
-      "Google ha detectado que la llave anterior fue compartida en el chat y la ha bloqueado por seguridad (Error 403: Leaked).\n\n" +
+      "Google ha bloqueado la llave anterior porque fue detectada en el chat público.\n\n" +
       "PASOS PARA ARREGLARLO:\n" +
-      "1. Crea una llave NUEVA en https://aistudio.google.com/app/apikey\n" +
-      "2. Ve al icono 🔑 (Secrets) arriba a la derecha en esta pantalla.\n" +
+      "1. Ve a https://aistudio.google.com/app/apikey y pulsa 'Create API key'.\n" +
+      "2. En esta ventana, ve arriba a la derecha al icono de la llave (🔑 Secrets).\n" +
       "3. Crea o actualiza 'LLAVE_EXPERTA' con el nuevo valor.\n" +
-      "4. Pulsa 'Restart Server' y luego F5.\n\n" +
+      "4. Pulsa el botón 'RESTART SERVER' (abajo cerca de la terminal) y luego haz F5.\n\n" +
       "¡NO vuelvas a pegar la llave en el chat!";
     
-    console.error(`[Gemini Error] ${errorMsg}`);
+    console.error(`[Executive Engine] ${errorMsg}`);
     throw new Error(errorMsg);
   }
 };
@@ -195,6 +199,7 @@ export const geminiService = {
    * Módulo 5-15: Executive Intelligence Core
    */
   async analyzeExecutive(resumeData: any, jobData: any | null, lang: Language) {
+    console.log('[Executive Engine] Starting Analysis...', { hasJob: !!jobData, lang });
     ensureApiKey();
     const ai = getAiClient();
     const prompt = `Realiza un análisis integral del CV nivel EXECUTIVE ENGINE.
@@ -228,155 +233,172 @@ export const geminiService = {
     LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
     `;
 
-    const response = await withRetry(() => ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: "user", parts: [{ text: prompt }] }],
-      config: {
-        systemInstruction: `Eres EXECUTIVE CV INTELLIGENCE ENGINE. Eres un experto en Outplacement y Executive Search Senior.
-        Tus diagnósticos son deterministicos y quirúrgicos. No usas lenguaje genérico.
-        TODA la respuesta debe estar en ${lang === 'es' ? 'Español' : 'Inglés'}.`,
-        responseMimeType: "application/json",
-        responseSchema: {
-          type: Type.OBJECT,
-          properties: {
-            scores: {
-              type: Type.OBJECT,
-              properties: {
-                parsing: { type: Type.NUMBER },
-                ats: { type: Type.NUMBER },
-                executive: { type: Type.NUMBER },
-                achievements: { type: Type.NUMBER },
-                clarity: { type: Type.NUMBER },
-                keywords: { type: Type.NUMBER },
-                consistency: { type: Type.NUMBER },
-                personalization: { type: Type.NUMBER },
-                overall: { type: Type.NUMBER }
-              }
-            },
-            strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-            gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
-            alerts: {
-              type: Type.ARRAY,
-              items: {
+    try {
+      console.log('[Executive Engine] Calling Gemini API...');
+      
+      // Use a race to implement a timeout for the API call
+      const analysisPromise = withRetry(() => ai.models.generateContent({
+        model: TEXT_MODEL,
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          systemInstruction: `Eres EXECUTIVE CV INTELLIGENCE ENGINE. Eres un experto en Outplacement y Executive Search Senior.
+          Tus diagnósticos son deterministicos y quirúrgicos. No usas lenguaje genérico.
+          TODA la respuesta debe estar en ${lang === 'es' ? 'Español' : 'Inglés'}.`,
+          responseMimeType: "application/json",
+          responseSchema: {
+            type: Type.OBJECT,
+            properties: {
+              scores: {
                 type: Type.OBJECT,
                 properties: {
-                  level: { type: Type.STRING, enum: ["Critical", "Warning", "Info"] },
-                  text: { type: Type.STRING },
-                  explanation: { type: Type.STRING },
-                  recommendation: { type: Type.STRING }
+                  parsing: { type: Type.NUMBER },
+                  ats: { type: Type.NUMBER },
+                  executive: { type: Type.NUMBER },
+                  achievements: { type: Type.NUMBER },
+                  clarity: { type: Type.NUMBER },
+                  keywords: { type: Type.NUMBER },
+                  consistency: { type: Type.NUMBER },
+                  personalization: { type: Type.NUMBER },
+                  overall: { type: Type.NUMBER }
                 }
-              }
-            },
-            recommendations: {
-              type: Type.ARRAY,
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  section: { type: Type.STRING },
-                  title: { type: Type.STRING },
-                  why: { type: Type.STRING },
-                  impact: { type: Type.STRING },
-                  scoreImprovement: { type: Type.STRING },
-                  rewriteExample: { type: Type.STRING },
-                  priority: { type: Type.STRING, enum: ["High", "Medium", "Low"] }
-                }
-              }
-            },
-            linkedInPulse: {
-              type: Type.OBJECT,
-              properties: {
-                score: { type: Type.NUMBER },
-                diagnosis: {
+              },
+              strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+              gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+              alerts: {
+                type: Type.ARRAY,
+                items: {
                   type: Type.OBJECT,
                   properties: {
-                    headline: { type: Type.STRING },
-                    about: { type: Type.STRING },
-                    experience: { type: Type.STRING },
-                    skills: { type: Type.STRING }
+                    level: { type: Type.STRING, enum: ["Critical", "Warning", "Info"] },
+                    text: { type: Type.STRING },
+                    explanation: { type: Type.STRING },
+                    recommendation: { type: Type.STRING }
                   }
-                },
-                headlineSuggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                aboutRewrite: { type: Type.STRING },
-                topKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-                gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
-                priorityActions: { type: Type.ARRAY, items: { type: Type.STRING } }
-              }
-            },
-            marketPulse: {
-              type: Type.OBJECT,
-              properties: {
-                alternativeRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
-                trendingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
-                hardSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
-                softSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
-                demandLevel: { type: Type.STRING },
-                bridgeIndustries: { type: Type.ARRAY, items: { type: Type.STRING } }
-              }
-            },
-            careerOrientation: {
-              type: Type.OBJECT,
-              properties: {
-                roles: {
-                  type: Type.ARRAY,
-                  items: {
+                }
+              },
+              recommendations: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    section: { type: Type.STRING },
+                    title: { type: Type.STRING },
+                    why: { type: Type.STRING },
+                    impact: { type: Type.STRING },
+                    scoreImprovement: { type: Type.STRING },
+                    rewriteExample: { type: Type.STRING },
+                    priority: { type: Type.STRING, enum: ["High", "Medium", "Low"] }
+                  }
+                }
+              },
+              linkedInPulse: {
+                type: Type.OBJECT,
+                properties: {
+                  score: { type: Type.NUMBER },
+                  diagnosis: {
                     type: Type.OBJECT,
                     properties: {
-                      role: { type: Type.STRING },
-                      fitPercentage: { type: Type.NUMBER },
-                      fitReason: { type: Type.STRING },
-                      strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
-                      gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
-                      recommendation: { type: Type.STRING }
+                      headline: { type: Type.STRING },
+                      about: { type: Type.STRING },
+                      experience: { type: Type.STRING },
+                      skills: { type: Type.STRING }
+                    }
+                  },
+                  headlineSuggestions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  aboutRewrite: { type: Type.STRING },
+                  topKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  priorityActions: { type: Type.ARRAY, items: { type: Type.STRING } }
+                }
+              },
+              marketPulse: {
+                type: Type.OBJECT,
+                properties: {
+                  alternativeRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  trendingKeywords: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  hardSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  softSkills: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  demandLevel: { type: Type.STRING },
+                  bridgeIndustries: { type: Type.ARRAY, items: { type: Type.STRING } }
+                }
+              },
+              careerOrientation: {
+                type: Type.OBJECT,
+                properties: {
+                  roles: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        role: { type: Type.STRING },
+                        fitPercentage: { type: Type.NUMBER },
+                        fitReason: { type: Type.STRING },
+                        strengths: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        gaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                        recommendation: { type: Type.STRING }
+                      }
                     }
                   }
                 }
-              }
-            },
-            careerMap: {
-              type: Type.OBJECT,
-              properties: {
-                currentIdentity: { type: Type.STRING },
-                nextSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
-                stretchRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
-                pivotRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
-                consultingOptions: { type: Type.ARRAY, items: { type: Type.STRING } },
-                timeline: {
-                  type: Type.OBJECT,
-                  properties: {
-                    year1: { type: Type.STRING },
-                    year3: { type: Type.STRING },
-                    year5: { type: Type.STRING }
-                  }
-                },
-                blockers: { type: Type.ARRAY, items: { type: Type.STRING } },
-                skillGaps: { type: Type.ARRAY, items: { type: Type.STRING } },
-                narrativeAdvice: { type: Type.STRING }
-              }
-            },
-            improvedCV: {
-              type: Type.OBJECT,
-              properties: {
-                sections: {
-                  type: Type.ARRAY,
-                  items: {
+              },
+              careerMap: {
+                type: Type.OBJECT,
+                properties: {
+                  currentIdentity: { type: Type.STRING },
+                  nextSteps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  stretchRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  pivotRoles: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  consultingOptions: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  timeline: {
                     type: Type.OBJECT,
                     properties: {
-                      originalText: { type: Type.STRING },
-                      recommendedChange: { type: Type.STRING },
-                      rewrittenText: { type: Type.STRING }
+                      year1: { type: Type.STRING },
+                      year3: { type: Type.STRING },
+                      year5: { type: Type.STRING }
                     }
-                  }
-                },
-                fullATS: { type: Type.STRING },
-                fullExecutive: { type: Type.STRING }
+                  },
+                  blockers: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  skillGaps: { type: Type.ARRAY, items: { type: Type.STRING } },
+                  narrativeAdvice: { type: Type.STRING }
+                }
+              },
+              improvedCV: {
+                type: Type.OBJECT,
+                properties: {
+                  sections: {
+                    type: Type.ARRAY,
+                    items: {
+                      type: Type.OBJECT,
+                      properties: {
+                        originalText: { type: Type.STRING },
+                        recommendedChange: { type: Type.STRING },
+                        rewrittenText: { type: Type.STRING }
+                      }
+                    }
+                  },
+                  fullATS: { type: Type.STRING },
+                  fullExecutive: { type: Type.STRING }
+                }
               }
             }
           }
         }
-      }
-    }));
+      }));
 
-    return JSON.parse(response.text);
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error("TIEMPO DE ESPERA AGOTADO (Timeout).\n\nEl análisis está tardando más de lo normal debido a la alta carga del motor de Google. Por favor, intenta de nuevo.")), 45000)
+      );
+
+      const response = await Promise.race([analysisPromise, timeoutPromise]) as any;
+
+      console.log('[Executive Engine] API Success. Parsing response text...');
+      const result = JSON.parse(response.text);
+      console.log('[Executive Engine] Analysis Complete.', result);
+      return result;
+    } catch (e: any) {
+      console.error('[Executive Engine] Fatal Analysis Error:', e);
+      throw e;
+    }
   },
 
   /**
