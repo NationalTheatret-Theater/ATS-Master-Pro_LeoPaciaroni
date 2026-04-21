@@ -15,9 +15,9 @@ async function startServer() {
     const key = process.env.GEMINI_API_KEY || 
                 process.env.LLAVE_EXPERTA || 
                 process.env.VITE_LLAVE_EXPERTA || 
-                "AIzaSyD80-zuJymR0tcaWtGfleHR7pDLW5zl4BE";
+                "";
     
-    console.log(`[Bridge] CONFIG HIT at ${new Date().toISOString()}`);
+    console.log(`[Bridge] CONFIG HIT at ${new Date().toISOString()}. Key detected: ${!!key}`);
     
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');

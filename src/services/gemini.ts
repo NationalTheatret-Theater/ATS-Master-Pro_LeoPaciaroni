@@ -7,14 +7,11 @@ import { Language } from '../types';
  */
 const TEXT_MODEL = "gemini-flash-latest";
 
-// THE USER'S PROVIDED KEY (Final Fallback to ensure it works NOW)
-const MASTER_FALLBACK_KEY = "AIzaSyD80-zuJymR0tcaWtGfleHR7pDLW5zl4BE";
-
 // Robust API Key recovery for Frontend (Hybrid Strategy)
 const getFrontendApiKey = (): string => {
   // 1. Check the Dynamic Runtime Bridge (Current Environment)
   const dynamicConfig = (window as any).__ENGINE_CONFIG__;
-  if (dynamicConfig?.GEMINI_API_KEY && dynamicConfig.GEMINI_API_KEY.length > 10) {
+  if (dynamicConfig?.GEMINI_API_KEY && dynamicConfig.GEMINI_API_KEY.length > 20) {
     return dynamicConfig.GEMINI_API_KEY;
   }
 
@@ -25,38 +22,35 @@ const getFrontendApiKey = (): string => {
               (process.env as any).VITE_GEMINI_API_KEY ||
               (window as any).__GEMINI_API_KEY__;
   
-  if (key && key.length > 10 && key.startsWith('AIza')) {
+  if (key && key.length > 20 && key.startsWith('AIza')) {
     return key;
   }
 
-  // 3. Last Resort: Master Fallback (The key you provided in the chat)
-  return MASTER_FALLBACK_KEY;
+  return '';
 };
 
 const apiKey = getFrontendApiKey();
 
 // Initialize AI
 const ai = new GoogleGenAI({ 
-  apiKey: apiKey
+  apiKey: apiKey || 'NO_KEY_DETECTED'
 });
 
 // Guard function to check key before any call
 const ensureApiKey = () => {
   const currentKey = getFrontendApiKey();
-  const lastUpdate = (window as any).__ENGINE_CONFIG__?.lastUpdated || 'No detectada';
   
-  // We check if it's the fallback or a real environment key
-  const isFallback = currentKey === MASTER_FALLBACK_KEY;
-
-  if (!currentKey || currentKey.length < 10) {
+  if (!currentKey || currentKey.length < 20) {
     throw new Error(
-      "SISTEMA SIN LLAVE DETECTADA.\n\n" +
-      "Por favor, asegúrate de que el Secret se llame LLAVE_EXPERTA y refresca con F5."
+      "NUEVA LLAVE REQUERIDA (SEGURIDAD).\n\n" +
+      "Google ha detectado que la llave anterior fue compartida en el chat y la ha bloqueado por seguridad (Error 403: Leaked).\n\n" +
+      "PASOS PARA ARREGLARLO:\n" +
+      "1. Crea una llave NUEVA en https://aistudio.google.com/app/apikey\n" +
+      "2. Ve al icono 🔑 (Secrets) arriba a la derecha en esta pantalla.\n" +
+      "3. Actualiza 'LLAVE_EXPERTA' con el nuevo valor.\n" +
+      "4. Pulsa 'Restart Server' y luego F5.\n\n" +
+      "¡NO vuelvas a pegar la llave en el chat!"
     );
-  }
-  
-  if (isFallback) {
-    console.warn("Using master fallback key. Synchronized environment key not found.");
   }
 };
 
