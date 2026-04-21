@@ -12,24 +12,33 @@ async function startServer() {
 
   // 1. EMERGENCY CONFIG BRIDGE (MUST BE FIRST)
   app.get('/env-config.js', (req, res) => {
-    const key = process.env.GEMINI_API_KEY || 
-                process.env.LLAVE_EXPERTA || 
-                process.env.VITE_LLAVE_EXPERTA || 
-                "";
-    
-    let source = "None";
-    if (process.env.GEMINI_API_KEY) source = "GEMINI_API_KEY";
-    else if (process.env.LLAVE_EXPERTA) source = "LLAVE_EXPERTA";
-    else if (process.env.VITE_LLAVE_EXPERTA) source = "VITE_LLAVE_EXPERTA";
+    // Collect all potential keys
+    const keys = [
+      { name: 'GEMINI_API_KEY', val: process.env.GEMINI_API_KEY?.trim() || "" },
+      { name: 'LLAVE_EXPERTA', val: process.env.LLAVE_EXPERTA?.trim() || "" },
+      { name: 'VITE_LLAVE_EXPERTA', val: process.env.VITE_LLAVE_EXPERTA?.trim() || "" }
+    ];
 
-    console.log(`[Bridge] CONFIG HIT at ${new Date().toISOString()}. Key source: ${source}, Length: ${key.length}`);
+    // Priority 1: Pick the one that looks like a real 39-char key
+    let bestKey = keys.find(k => k.val.length === 39 || k.val.startsWith('AIzaSy'));
+    
+    // Priority 2: Pick the longest one if none look perfect
+    if (!bestKey) {
+      bestKey = keys.reduce((prev, current) => (prev.val.length > current.val.length) ? prev : current);
+    }
+
+    const key = bestKey.val;
+    const source = bestKey.name;
+
+    console.log(`[Bridge] SELECTOR HIT. Chosen: ${source}, Length: ${key.length}, LooksValid: ${key.startsWith('AIzaSy')}`);
     
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(`window.__ENGINE_CONFIG__ = { 
   GEMINI_API_KEY: "${key}",
-  lastUpdated: "${new Date().toISOString()}"
-}; console.log('Executive Engine: Bridge Connected');`);
+  lastUpdated: "${new Date().toISOString()}",
+  source: "${source}"
+}; console.log('Executive Engine: Bridge Connected via ${source}');`);
   });
 
   // 2. MIDDLEWARES

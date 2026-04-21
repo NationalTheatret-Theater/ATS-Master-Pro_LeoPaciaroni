@@ -214,8 +214,25 @@ export default function App() {
                 {((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) ? "ONLINE" : "OFFLINE"}
               </div>
               {!((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) && (
-                <div className="text-[8px] text-rose-400 font-bold uppercase leading-tight text-right px-1">
-                  Revisa el icono 🔑 (Secrets) y pulsa <br/>'RESTART SERVER' (&gt;_) abajo a la derecha.
+                <div className="space-y-2 text-right">
+                  <div className="text-[8px] text-rose-400 font-bold uppercase leading-tight px-1">
+                    Motor Crítico: Llave inválida detectada.
+                  </div>
+                  <button 
+                    onClick={() => {
+                      const msg = "PASOS PARA ARREGLAR LA CONEXIÓN:\n\n" +
+                        "1. Borra todas las llaves en Secrets (🔑).\n" +
+                        "2. Crea una sola llave llamada 'GEMINI_API_KEY'.\n" +
+                        "3. Pega el valor de 39 caracteres (empieza por AIzaSy).\n" +
+                        "4. Pulsa 'RESTART SERVER' (>_) abajo a la derecha.\n" +
+                        "5. Haz F5.\n\n" +
+                        "Dato detectado: " + ((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY || 'NADA');
+                      alert(msg);
+                    }}
+                    className="ml-auto flex items-center gap-1 px-2 py-1 bg-rose-500 text-white text-[9px] font-bold rounded hover:bg-rose-600 transition-colors"
+                  >
+                    <AlertCircle className="w-3 h-3" /> ARREGLAR AHORA
+                  </button>
                 </div>
               )}
             </div>

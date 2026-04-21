@@ -11,26 +11,25 @@ const TEXT_MODEL = "gemini-flash-latest";
 const getFrontendApiKey = (): string => {
   // 1. Check the Dynamic Runtime Bridge (Current Environment)
   const dynamicConfig = (window as any).__ENGINE_CONFIG__;
-  const bridgeKey = dynamicConfig?.GEMINI_API_KEY;
+  const bridgeKey = dynamicConfig?.GEMINI_API_KEY?.trim();
   
   if (bridgeKey && bridgeKey.length > 10) {
-    console.log(`[Gemini] Key detected via Dynamic Bridge (Prefix: ${bridgeKey.substring(0, 4)}...)`);
+    // Hidden internal diagnostic
+    (window as any)._LOG_KEY_SOURCE = dynamicConfig.source || 'Bridge';
     return bridgeKey;
   }
 
   // 2. Check build-time injected keys
-  const envKey = process.env.GEMINI_API_KEY || 
+  const envKey = (process.env.GEMINI_API_KEY || 
                  process.env.LLAVE_EXPERTA || 
                  (process.env as any).VITE_LLAVE_EXPERTA || 
                  (process.env as any).VITE_GEMINI_API_KEY ||
-                 (window as any).__GEMINI_API_KEY__;
+                 (window as any).__GEMINI_API_KEY__)?.trim();
   
   if (envKey && envKey.length > 10) {
-    console.log(`[Gemini] Key detected via Environment/Build (Prefix: ${envKey.substring(0, 4)}...)`);
     return envKey;
   }
 
-  console.warn('[Gemini] No valid API Key found in any source.');
   return '';
 };
 
@@ -68,14 +67,16 @@ const ensureApiKey = () => {
   // Extra check for short keys (most common user error)
   if (currentKey.length > 10 && currentKey.length < 30) {
     const errorMsg = `LLAVE DEMASIADO CORTA (${currentKey.length} caracteres).\n\n` +
-      "Has pegado algo que NO es una API Key (probablemente un ID de proyecto).\n\n" +
-      "Una API Key válida de Gemini tiene exactamente 39 caracteres y empieza por 'AIzaSy'.\n\n" +
-      "Por favor, vuelve a https://aistudio.google.com/app/apikey y copia el valor correcto en el secreto 'LLAVE_EXPERTA'.";
+      "⚠️ ERROR DE COPIADO: Has pegado algo que NO es la llave correcta.\n\n" +
+      "GUÍA VISUAL:\n" +
+      "❌ LO QUE TIENES: 'generative-lan...' (Es un ID de proyecto)\n" +
+      "✅ LO QUE NECESITAS: 'AIzaSy' + 33 carácteres más (Total 39).\n\n" +
+      "Por favor, vuelve a https://aistudio.google.com/app/apikey y pulsa el botón azul 'COPY' que está en la columna 'API Key'.";
     
     console.error(`[Executive Engine] ${errorMsg}`);
     throw new Error(errorMsg);
   }
-};
+}
 
 // Helper to handle retries on quota errors
 const withRetry = async <T>(fn: () => Promise<T>, retries = 2): Promise<T> => {
