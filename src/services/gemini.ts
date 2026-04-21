@@ -3,8 +3,9 @@ import { Language } from '../types';
 
 /**
  * Native Gemini Service (Frontend-first as per Skill Guidelines)
+ * Using 'gemini-flash-latest' for the best balance of speed, accuracy, and quota limits.
  */
-const TEXT_MODEL = "gemini-1.5-flash";
+const TEXT_MODEL = "gemini-flash-latest";
 
 // THE USER'S PROVIDED KEY (Final Fallback to ensure it works NOW)
 const MASTER_FALLBACK_KEY = "AIzaSyD80-zuJymR0tcaWtGfleHR7pDLW5zl4BE";
