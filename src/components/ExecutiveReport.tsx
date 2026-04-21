@@ -271,6 +271,67 @@ export const ExecutiveReport: React.FC<ExecutiveReportProps> = ({ analysis, lang
             </div>
          </div>
       </div>
+      {/* 7. Full Optimization Engine (Holistic Rewrites) */}
+      {(analysis.improvedCV?.fullATS || analysis.improvedCV?.fullExecutive) && (
+        <div className="space-y-6">
+          <h3 className="text-xl font-serif text-executive-navy border-l-4 border-executive-gold pl-4">
+            {lang === 'es' ? "Producto Final: CV Optimizado" : "Final Product: Optimized CV"}
+          </h3>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {analysis.improvedCV.fullExecutive && (
+              <div className="executive-card p-8 bg-white border-executive-gold/30 shadow-xl shadow-executive-gold/5">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-executive-gold/10 rounded-lg">
+                    <Zap className="w-5 h-5 text-executive-gold" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-executive-navy">Executive Positioning</h4>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Optimizado para Hunter & C-Level</p>
+                  </div>
+                </div>
+                <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-100 font-serif text-sm text-executive-navy leading-relaxed whitespace-pre-wrap max-h-[600px] overflow-y-auto custom-scrollbar">
+                  {analysis.improvedCV.fullExecutive}
+                </div>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(analysis.improvedCV?.fullExecutive || '');
+                    alert(lang === 'es' ? 'Copiado al portapapeles' : 'Copied to clipboard');
+                  }}
+                  className="mt-6 w-full luxury-button !py-3 gap-2"
+                >
+                   {lang === 'es' ? "Copiar Versión Ejecutiva" : "Copy Executive Version"}
+                </button>
+              </div>
+            )}
+
+            {analysis.improvedCV.fullATS && (
+              <div className="executive-card p-8 bg-slate-50 border-blue-200">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="p-2 bg-blue-100 rounded-lg">
+                    <Target className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-executive-navy">ATS Technical Optimization</h4>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold">Optimizado para iCIMS, Greenhouse & Workday</p>
+                  </div>
+                </div>
+                <div className="bg-white p-6 rounded-2xl border border-blue-50 font-mono text-xs text-slate-700 leading-relaxed whitespace-pre-wrap max-h-[600px] overflow-y-auto custom-scrollbar">
+                  {analysis.improvedCV.fullATS}
+                </div>
+                <button 
+                  onClick={() => {
+                    navigator.clipboard.writeText(analysis.improvedCV?.fullATS || '');
+                    alert(lang === 'es' ? 'Copiado al portapapeles' : 'Copied to clipboard');
+                  }}
+                  className="mt-6 w-full luxury-button-outline !py-3 gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+                >
+                   {lang === 'es' ? "Copiar Formato ATS" : "Copy ATS Format"}
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };

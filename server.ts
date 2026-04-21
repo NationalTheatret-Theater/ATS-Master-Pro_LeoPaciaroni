@@ -32,12 +32,17 @@ async function startServer() {
 
     console.log(`[Bridge] SELECTOR HIT. Chosen: ${source}, Length: ${key.length}, LooksValid: ${key.startsWith('AIzaSy')}`);
     
+    if (key.length === 0) {
+      console.warn('[Bridge] CRITICAL: No API Keys found in process.env. Check Secrets/Env variables.');
+    }
+
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
     res.send(`window.__ENGINE_CONFIG__ = { 
   GEMINI_API_KEY: "${key}",
   lastUpdated: "${new Date().toISOString()}",
-  source: "${source}"
+  source: "${source}",
+  envKeysDetected: ${JSON.stringify(keys.map(k => ({ name: k.name, len: k.val.length })))}
 }; console.log('Executive Engine: Bridge Connected via ${source}');`);
   });
 

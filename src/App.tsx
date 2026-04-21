@@ -220,13 +220,15 @@ export default function App() {
                   </div>
                   <button 
                     onClick={() => {
-                      const msg = "PASOS PARA ARREGLAR LA CONEXIÓN:\n\n" +
-                        "1. Borra todas las llaves en Secrets (🔑).\n" +
-                        "2. Crea una sola llave llamada 'GEMINI_API_KEY'.\n" +
-                        "3. Pega el valor de 39 caracteres (empieza por AIzaSy).\n" +
-                        "4. Pulsa 'RESTART SERVER' (>_) abajo a la derecha.\n" +
-                        "5. Haz F5.\n\n" +
-                        "Dato detectado: " + ((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY || 'NADA');
+                      const config = (window as any).__ENGINE_CONFIG__;
+                      const msg = "DIAGNÓSTICO DE CONEXIÓN:\n\n" +
+                        "1. Estado: OFFLINE\n" +
+                        "2. Llave elegida: " + (config?.source || 'NINGUNA') + "\n" +
+                        "3. Longitud: " + (config?.GEMINI_API_KEY?.length || 0) + "\n" +
+                        "4. Encontradas en Server:\n" + 
+                        (config?.envKeysDetected?.map((k: any) => `- ${k.name}: ${k.len} chars`).join('\n') || 'No se detectaron llaves') + "\n\n" +
+                        "SOLUCIÓN:\n" +
+                        "En el deploy de GitHub/Shared App, asegúrate de añadir 'GEMINI_API_KEY' en los Secrets del proyecto desplegado.";
                       alert(msg);
                     }}
                     className="ml-auto flex items-center gap-1 px-2 py-1 bg-rose-500 text-white text-[9px] font-bold rounded hover:bg-rose-600 transition-colors"
