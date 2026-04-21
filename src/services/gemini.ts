@@ -52,14 +52,25 @@ const ensureApiKey = () => {
   const currentKey = getFrontendApiKey();
   
   if (!currentKey || currentKey.length < 10) {
-    const errorMsg = "NUEVA LLAVE REQUERIDA (SEGURIDAD).\n\n" +
-      "Google ha bloqueado la llave anterior porque fue detectada en el chat público.\n\n" +
-      "PASOS PARA ARREGLARLO:\n" +
+    const errorMsg = "LLAVE DE SEGURIDAD FALTANTE O BLOQUEADA.\n\n" +
+      "Google ha bloqueado la llave anterior por 'leakeo' (se compartió en el chat) o simplemente no has configurado una nueva.\n\n" +
+      "PASOS CRÍTICOS:\n" +
       "1. Ve a https://aistudio.google.com/app/apikey y pulsa 'Create API key'.\n" +
-      "2. En esta ventana, ve arriba a la derecha al icono de la llave (🔑 Secrets).\n" +
-      "3. Crea o actualiza 'LLAVE_EXPERTA' con el nuevo valor.\n" +
-      "4. Pulsa el botón 'RESTART SERVER' (abajo cerca de la terminal) y luego haz F5.\n\n" +
-      "¡NO vuelvas a pegar la llave en el chat!";
+      "2. Copia la llave (empieza por 'AIzaSy' y tiene 39 caracteres).\n" +
+      "3. Pulsa el icono 🔑 (Secrets) arriba a la derecha en esta pantalla.\n" +
+      "4. Crea o actualiza 'LLAVE_EXPERTA' con el valor de 39 caracteres.\n" +
+      "5. Pulsa el botón 'RESTART SERVER' (>_) abajo a la derecha y haz F5.";
+    
+    console.error(`[Executive Engine] ${errorMsg}`);
+    throw new Error(errorMsg);
+  }
+
+  // Extra check for short keys (most common user error)
+  if (currentKey.length > 10 && currentKey.length < 30) {
+    const errorMsg = `LLAVE DEMASIADO CORTA (${currentKey.length} caracteres).\n\n` +
+      "Has pegado algo que NO es una API Key (probablemente un ID de proyecto).\n\n" +
+      "Una API Key válida de Gemini tiene exactamente 39 caracteres y empieza por 'AIzaSy'.\n\n" +
+      "Por favor, vuelve a https://aistudio.google.com/app/apikey y copia el valor correcto en el secreto 'LLAVE_EXPERTA'.";
     
     console.error(`[Executive Engine] ${errorMsg}`);
     throw new Error(errorMsg);

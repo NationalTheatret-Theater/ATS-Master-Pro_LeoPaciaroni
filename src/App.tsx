@@ -203,12 +203,21 @@ export default function App() {
             <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
               Executive engine
             </span>
-            <div className={cn(
-              "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold",
-              (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY ? "bg-emerald-50 text-emerald-600" : "bg-rose-50 text-rose-600"
-            )}>
-              <div className={cn("w-1.5 h-1.5 rounded-full", (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
-              {(window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY ? "ONLINE" : "OFFLINE"}
+            <div className="flex flex-col gap-1">
+              <div className={cn(
+                "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold self-end",
+                (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30 
+                  ? "bg-emerald-50 text-emerald-600" 
+                  : "bg-rose-50 text-rose-600"
+              )}>
+                <div className={cn("w-1.5 h-1.5 rounded-full", ((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
+                {((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) ? "ONLINE" : "OFFLINE"}
+              </div>
+              {!((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) && (
+                <div className="text-[8px] text-rose-400 font-bold uppercase leading-tight text-right px-1">
+                  Revisa el icono 🔑 (Secrets) y pulsa <br/>'RESTART SERVER' (&gt;_) abajo a la derecha.
+                </div>
+              )}
             </div>
           </div>
 
