@@ -12,6 +12,7 @@ const getFrontendApiKey = (): string => {
   // 1. Check the Dynamic Runtime Bridge (Current Environment)
   const dynamicConfig = (window as any).__ENGINE_CONFIG__;
   if (dynamicConfig?.GEMINI_API_KEY && dynamicConfig.GEMINI_API_KEY.length > 20) {
+    console.log('[Gemini] Key found via dynamic bridge');
     return dynamicConfig.GEMINI_API_KEY;
   }
 
@@ -23,34 +24,41 @@ const getFrontendApiKey = (): string => {
               (window as any).__GEMINI_API_KEY__;
   
   if (key && key.length > 20 && key.startsWith('AIza')) {
+    console.log('[Gemini] Key found via environment/injected variables');
     return key;
   }
 
   return '';
 };
 
-const apiKey = getFrontendApiKey();
-
-// Initialize AI
-const ai = new GoogleGenAI({ 
-  apiKey: apiKey || 'NO_KEY_DETECTED'
-});
+// Lazy initialization of AI client to prevent startup crashes
+let aiInstance: GoogleGenAI | null = null;
+const getAiClient = () => {
+  if (!aiInstance) {
+    const key = getFrontendApiKey();
+    aiInstance = new GoogleGenAI({ 
+      apiKey: key || 'PENDING_KEY'
+    });
+  }
+  return aiInstance;
+};
 
 // Guard function to check key before any call
 const ensureApiKey = () => {
   const currentKey = getFrontendApiKey();
   
   if (!currentKey || currentKey.length < 20) {
-    throw new Error(
-      "NUEVA LLAVE REQUERIDA (SEGURIDAD).\n\n" +
+    const errorMsg = "NUEVA LLAVE REQUERIDA (SEGURIDAD).\n\n" +
       "Google ha detectado que la llave anterior fue compartida en el chat y la ha bloqueado por seguridad (Error 403: Leaked).\n\n" +
       "PASOS PARA ARREGLARLO:\n" +
       "1. Crea una llave NUEVA en https://aistudio.google.com/app/apikey\n" +
       "2. Ve al icono 🔑 (Secrets) arriba a la derecha en esta pantalla.\n" +
-      "3. Actualiza 'LLAVE_EXPERTA' con el nuevo valor.\n" +
+      "3. Crea o actualiza 'LLAVE_EXPERTA' con el nuevo valor.\n" +
       "4. Pulsa 'Restart Server' y luego F5.\n\n" +
-      "¡NO vuelvas a pegar la llave en el chat!"
-    );
+      "¡NO vuelvas a pegar la llave en el chat!";
+    
+    console.error(`[Gemini Error] ${errorMsg}`);
+    throw new Error(errorMsg);
   }
 };
 
@@ -79,6 +87,7 @@ export const geminiService = {
    */
   async parseResume(text: string, lang: Language) {
     ensureApiKey();
+    const ai = getAiClient();
     const response = await withRetry(() => ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
@@ -142,6 +151,7 @@ export const geminiService = {
    */
   async parseJob(text: string, lang: Language) {
     ensureApiKey();
+    const ai = getAiClient();
     const response = await withRetry(() => ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
@@ -186,6 +196,7 @@ export const geminiService = {
    */
   async analyzeExecutive(resumeData: any, jobData: any | null, lang: Language) {
     ensureApiKey();
+    const ai = getAiClient();
     const prompt = `Realiza un análisis integral del CV nivel EXECUTIVE ENGINE.
     
     RESUME DATA: ${JSON.stringify(resumeData)}
@@ -373,6 +384,7 @@ export const geminiService = {
    */
   async optimizeResume(resumeRaw: string, jobRaw: string | null, type: 'ATS_OPTIMIZED' | 'TAILOR_MADE', lang: Language) {
     ensureApiKey();
+    const ai = getAiClient();
     const prompt = type === 'ATS_OPTIMIZED' 
       ? (lang === 'es' 
           ? `Optimiza este CV para que sea 100% compatible con ATS (Greenhouse, iCIMS) y tenga un fuerte impacto ejecutivo. Mejora estructura, redacción y claridad sin inventar experiencia.` 

@@ -17,7 +17,12 @@ async function startServer() {
                 process.env.VITE_LLAVE_EXPERTA || 
                 "";
     
-    console.log(`[Bridge] CONFIG HIT at ${new Date().toISOString()}. Key detected: ${!!key}`);
+    let source = "None";
+    if (process.env.GEMINI_API_KEY) source = "GEMINI_API_KEY";
+    else if (process.env.LLAVE_EXPERTA) source = "LLAVE_EXPERTA";
+    else if (process.env.VITE_LLAVE_EXPERTA) source = "VITE_LLAVE_EXPERTA";
+
+    console.log(`[Bridge] CONFIG HIT at ${new Date().toISOString()}. Key source: ${source}, Length: ${key.length}`);
     
     res.setHeader('Content-Type', 'application/javascript');
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
