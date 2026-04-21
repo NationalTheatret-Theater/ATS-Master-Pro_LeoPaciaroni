@@ -4,7 +4,7 @@ import { Language } from '../types';
 /**
  * Native Gemini Service (Frontend-first as per Skill Guidelines)
  */
-const TEXT_MODEL = "gemini-2.0-flash";
+const TEXT_MODEL = "gemini-1.5-flash";
 
 // THE USER'S PROVIDED KEY (Final Fallback to ensure it works NOW)
 const MASTER_FALLBACK_KEY = "AIzaSyD80-zuJymR0tcaWtGfleHR7pDLW5zl4BE";
@@ -59,13 +59,32 @@ const ensureApiKey = () => {
   }
 };
 
+// Helper to handle retries on quota errors
+const withRetry = async <T>(fn: () => Promise<T>, retries = 2): Promise<T> => {
+  try {
+    return await fn();
+  } catch (error: any) {
+    const isQuotaError = error?.message?.includes('429') || error?.message?.includes('quota') || error?.message?.includes('exhausted');
+    if (isQuotaError && retries > 0) {
+      console.warn(`Quota hit, retrying in 2 seconds... (${retries} left)`);
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      return withRetry(fn, retries - 1);
+    }
+    
+    if (isQuotaError) {
+      throw new Error("EL MOTOR ESTÁ SATURADO (Google Free Tier).\n\nPor favor, espera 30 segundos sin pulsar nada y vuelve a intentarlo. Esto pasa porque Google limita la velocidad en cuentas gratuitas.");
+    }
+    throw error;
+  }
+};
+
 export const geminiService = {
   /**
    * Módulo 3. Parsing inteligente del CV
    */
   async parseResume(text: string, lang: Language) {
     ensureApiKey();
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
       config: {
@@ -118,7 +137,7 @@ export const geminiService = {
           }
         }
       }
-    });
+    }));
 
     return JSON.parse(response.text);
   },
@@ -128,7 +147,7 @@ export const geminiService = {
    */
   async parseJob(text: string, lang: Language) {
     ensureApiKey();
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text }] }],
       config: {
@@ -162,7 +181,7 @@ export const geminiService = {
           }
         }
       }
-    });
+    }));
 
     return JSON.parse(response.text);
   },
@@ -203,7 +222,7 @@ export const geminiService = {
     LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
     `;
 
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [{ role: "user", parts: [{ text: prompt }] }],
       config: {
@@ -349,7 +368,7 @@ export const geminiService = {
           }
         }
       }
-    });
+    }));
 
     return JSON.parse(response.text);
   },
@@ -367,7 +386,7 @@ export const geminiService = {
           ? `Adapta este CV específicamente para este aviso laboral. Prioriza lenguaje del aviso, logros relevantes y orden estratégico sin inventar información.`
           : `Tailor this resume specifically for this job notice. Prioritize job language, relevant achievements, and strategic ordering without inventing information.`);
 
-    const response = await ai.models.generateContent({
+    const response = await withRetry(() => ai.models.generateContent({
       model: TEXT_MODEL,
       contents: [
         { role: "user", parts: [
@@ -381,7 +400,7 @@ export const geminiService = {
           ? "Eres un redactor experto de CVs de nivel C-Level en Español. Escribes de forma sobria, ejecutiva y orientada a resultados. NUNCA inventas datos."
           : "You are an expert C-Level CV writer in English. You write in a sober, executive, and results-oriented manner. NEVER invent data.",
       }
-    });
+    }));
 
     return response.text;
   }
