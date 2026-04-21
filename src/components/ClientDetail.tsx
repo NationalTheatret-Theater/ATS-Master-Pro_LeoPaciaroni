@@ -1,33 +1,52 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  FileText, 
   Plus, 
-  History, 
-  Target, 
-  Award, 
-  TrendingUp, 
-  Briefcase, 
-  Download, 
   Trash2, 
-  Upload, 
-  ChevronRight,
-  ArrowRight,
-  Loader2,
+  FileText, 
+  User, 
+  Mail, 
+  Phone, 
+  Briefcase, 
+  Globe, 
+  MapPin, 
+  ChevronRight, 
+  Search,
+  Upload,
+  File as FileIcon,
+  Download,
   AlertCircle,
-  FileSearch,
+  Clock,
+  Loader2,
   CheckCircle2,
-  ArrowUpRight,
   ExternalLink,
-  Globe
+  ChevronLeft,
+  Target,
+  Award,
+  TrendingUp,
+  ArrowRight,
+  History,
+  FileSearch
 } from 'lucide-react';
 import { db, auth } from '../services/firebase';
-import { collection, query, where, getDocs, addDoc, serverTimestamp, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { 
+  collection, 
+  query, 
+  where, 
+  getDocs, 
+  addDoc, 
+  deleteDoc, 
+  doc, 
+  orderBy,
+  serverTimestamp,
+  updateDoc
+} from 'firebase/firestore';
 import { Client, Resume, JobDescription, Analysis, Language } from '../types';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
 import { processFile } from '../services/fileProcessing';
 import { geminiService } from '../services/gemini';
 import { ExecutiveReport } from './ExecutiveReport';
+import { exportToWord } from '../lib/exportUtils';
 
 interface ClientDetailProps {
   user: any;
@@ -48,6 +67,37 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
   const [selectedResumeId, setSelectedResumeId] = useState<string | null>(null);
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [viewAnalysisId, setViewAnalysisId] = useState<string | null>(null);
+
+  const handleExportReport = async (analysis: Analysis) => {
+    const content = `
+# OVERALL ENGINE SCORE: ${analysis.scores.overall}%
+
+# SCORES MATRIX
+- ATS Compatibility: ${analysis.scores.ats}%
+- Executive Positioning: ${analysis.scores.executive}%
+- Achievement Strength: ${analysis.scores.achievements}%
+- Clarity: ${analysis.scores.clarity}%
+- AI Parsing: ${analysis.scores.parsing}%
+- Career Consistency: ${analysis.scores.consistency}%
+
+# STRENGTHS
+${analysis.strengths.map(s => `- ${s}`).join('\n')}
+
+# GAPS & ALERTS
+${analysis.alerts.map(a => `[${a.level}] ${a.text}: ${a.explanation}`).join('\n')}
+
+# STRATEGIC RECOMMENDATIONS
+${analysis.recommendations.map(r => `## ${r.title} (${r.section})
+Why: ${r.why}
+Impact: ${r.impact}
+Rewrite Example: ${r.rewriteExample}`).join('\n\n')}
+
+# CAREER ORIENTATION
+${analysis.careerOrientation?.roles.map(r => `## ${r.role} (${r.fitPercentage}%)
+${r.fitReason}`).join('\n\n')}
+`;
+    await exportToWord(`Intelligence Report - ${analysis.analysisName}`, content, `Reporte_Inteligencia_${analysis.analysisName.replace(/\s+/g, '_')}`);
+  };
 
   const fetchData = async () => {
     setLoading(true);
@@ -539,7 +589,10 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
                         </div>
                       </div>
                       <div className="flex items-center gap-4">
-                        <button className="luxury-button-outline !py-2 !px-5 gap-2 text-xs">
+                        <button 
+                          onClick={() => handleExportReport(analysis)}
+                          className="luxury-button-outline !py-2 !px-5 gap-2 text-xs"
+                        >
                           <Download className="w-3.5 h-3.5" />
                           {lang === 'es' ? "Exportar Reporte" : "Export Report"}
                         </button>

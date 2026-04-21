@@ -9,6 +9,12 @@ const TEXT_MODEL = "gemini-flash-latest";
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
 const getFrontendApiKey = (): string => {
+  // 0. Priority: Manual Local Storage (User override)
+  const manualKey = localStorage.getItem('MANUAL_GEMINI_API_KEY');
+  if (manualKey && manualKey.length >= 30) {
+    return manualKey;
+  }
+
   // 1. Check the Dynamic Runtime Bridge (Current Environment)
   const dynamicConfig = (window as any).__ENGINE_CONFIG__;
   const bridgeKey = dynamicConfig?.GEMINI_API_KEY?.trim();
@@ -234,13 +240,16 @@ export const geminiService = {
        - 1 Borrador de sección 'About' estratégico.
        - Top 10 Keywords críticas.
        - Diagnóstico por secciones y acciones prioritarias.
-    4. Genera MARKET PULSE: Roles alternativos, industrias puente, tendencia.
+    4. Genera MARKET PULSE: Roles alternativos, industrias puente, tendencia, hard skills en demanda, soft skills en demanda y nivel de demanda actual del mercado.
     5. Genera ORIENTación DE CARRERA: Sugiere 5 roles target, rankeados por match %, con fortalezas y gaps para cada uno.
     6. Genera MAPA DE CARRERA: Next-step roles (inmediatos), stretch roles (desafío), pivot roles (cambio), y timeline detallado (1, 3, 5 años).
     7. SECCIÓN DE MEJORA: Para cada sección crítica del CV (Headline, Summary, Logros principales), genera:
        - originalText: El texto fuente del CV.
        - recommendedChange: Explicación de qué cambiar y por qué.
        - rewrittenText: El texto ya optimizado (aplicado directamente).
+    8. CV COMPLETO OPTIMIZADO (CRÍTICO): 
+       - fullATS: Genera el CV COMPLETO, desde el encabezado hasta el final, optimizado para pasar filtros ATS. Debe incluir todas las experiencias, educación y habilidades en un formato lineal y limpio.
+       - fullExecutive: Genera el CV COMPLETO, desde el encabezado hasta el final, con una narrativa DE ALTO IMPACTO EJECUTIVO, enfocada en resultados, métricas y liderazgo estratégico.
     
     LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
     `;

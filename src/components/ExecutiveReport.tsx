@@ -11,11 +11,15 @@ import {
   Award,
   Globe,
   Briefcase,
-  ChevronDown
+  ChevronDown,
+  Download,
+  Info,
+  TrendingUp as PulseIcon
 } from 'lucide-react';
-import { Analysis, Language } from '../types';
+import { Analysis, Language, SuggestedRole } from '../types';
 import { cn } from '../lib/utils';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
+import { exportToWord } from '../lib/exportUtils';
 
 interface ExecutiveReportProps {
   analysis: Analysis;
@@ -24,6 +28,7 @@ interface ExecutiveReportProps {
 
 export const ExecutiveReport: React.FC<ExecutiveReportProps> = ({ analysis, lang }) => {
   const scores = analysis.scores;
+  const [selectedRole, setSelectedRole] = React.useState<SuggestedRole | null>(null);
 
   const ScoreCard = ({ title, score, weight }: { title: string, score: number, weight: string }) => (
     <div className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
@@ -85,6 +90,60 @@ export const ExecutiveReport: React.FC<ExecutiveReportProps> = ({ analysis, lang
           <ScoreCard title={lang === 'es' ? "Potencial Personalización" : "Tailoring Potential"} score={scores.personalization} weight="10%" />
         </div>
       </div>
+
+      {/* 2.5 Market Pulse Section */}
+      {analysis.marketPulse && (
+        <div className="space-y-6">
+          <h3 className="text-xl font-serif text-executive-navy border-l-4 border-executive-gold pl-4 flex items-center gap-2">
+            <PulseIcon className="w-5 h-5 text-executive-gold" />
+            {lang === 'es' ? "Señales de Mercado & Skill Pulse" : "Market Signals & Skill Pulse"}
+          </h3>
+          <div className="executive-card p-8 bg-slate-50 border-slate-200">
+             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <div className="space-y-4">
+                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Trending Roles & Bridge Industries</h4>
+                   <div className="flex flex-wrap gap-2">
+                      {analysis.marketPulse.alternativeRoles.map(r => (
+                        <span key={r} className="px-3 py-1 bg-white border border-slate-200 rounded-lg text-xs font-medium text-slate-700 shadow-sm">{r}</span>
+                      ))}
+                   </div>
+                   <div className="flex flex-wrap gap-2">
+                      {analysis.marketPulse.bridgeIndustries.map(i => (
+                        <span key={i} className="px-3 py-1 bg-executive-navy/5 border border-executive-navy/10 rounded-lg text-xs font-medium text-executive-navy">{i}</span>
+                      ))}
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">High-Demand Hard Skills</h4>
+                   <div className="flex flex-wrap gap-2">
+                      {analysis.marketPulse.hardSkills.map(s => (
+                        <span key={s} className="px-3 py-1 bg-blue-50 border border-blue-100 rounded-lg text-xs font-medium text-blue-700">{s}</span>
+                      ))}
+                   </div>
+                </div>
+
+                <div className="space-y-4">
+                   <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Strategic Keywords Pulse</h4>
+                   <div className="flex flex-wrap gap-2">
+                      {analysis.marketPulse.trendingKeywords.map(k => (
+                        <span key={k} className="px-3 py-1 bg-emerald-50 border border-emerald-100 rounded-lg text-xs font-medium text-emerald-700">#{k}</span>
+                      ))}
+                   </div>
+                   <div className="pt-2">
+                      <div className="flex items-center justify-between text-xs mb-1">
+                        <span className="text-slate-400 font-bold uppercase">Demand Level</span>
+                        <span className="text-executive-gold font-bold">{analysis.marketPulse.demandLevel}</span>
+                      </div>
+                      <div className="h-1.5 w-full bg-slate-200 rounded-full overflow-hidden">
+                        <div className="h-full bg-executive-gold w-3/4" />
+                      </div>
+                   </div>
+                </div>
+             </div>
+          </div>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 3. Improved CV View (Original vs Rewritten) */}
@@ -206,7 +265,7 @@ export const ExecutiveReport: React.FC<ExecutiveReportProps> = ({ analysis, lang
                     </div>
                  </div>
               </div>
-              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between group cursor-pointer">
+              <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between group cursor-pointer" onClick={() => setSelectedRole(r)}>
                 <span className="text-[10px] font-bold text-executive-gold uppercase">Recommended Angle</span>
                 <ArrowRight className="w-4 h-4 text-slate-300 group-hover:text-executive-gold group-hover:translate-x-1 transition-all" />
               </div>
@@ -292,15 +351,24 @@ export const ExecutiveReport: React.FC<ExecutiveReportProps> = ({ analysis, lang
                 <div className="bg-slate-100/50 p-6 rounded-2xl border border-slate-100 font-serif text-sm text-executive-navy leading-relaxed whitespace-pre-wrap max-h-[600px] overflow-y-auto custom-scrollbar">
                   {analysis.improvedCV.fullExecutive}
                 </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(analysis.improvedCV?.fullExecutive || '');
-                    alert(lang === 'es' ? 'Copiado al portapapeles' : 'Copied to clipboard');
-                  }}
-                  className="mt-6 w-full luxury-button !py-3 gap-2"
-                >
-                   {lang === 'es' ? "Copiar Versión Ejecutiva" : "Copy Executive Version"}
-                </button>
+                <div className="flex gap-2 mt-6">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(analysis.improvedCV?.fullExecutive || '');
+                      alert(lang === 'es' ? 'Copiado al portapapeles' : 'Copied to clipboard');
+                    }}
+                    className="flex-1 luxury-button !py-3 gap-2"
+                  >
+                     {lang === 'es' ? "Copiar" : "Copy"}
+                  </button>
+                  <button 
+                    onClick={() => exportToWord("CV Ejecutivo Optimizado", analysis.improvedCV?.fullExecutive || '', `CV_Ejecutivo_${analysis.analysisName.replace(/\s+/g, '_')}`)}
+                    className="flex items-center justify-center p-3 border border-executive-gold text-executive-gold rounded-xl hover:bg-executive-gold/5 transition-colors"
+                    title={lang === 'es' ? "Descargar Word" : "Download Word"}
+                  >
+                    <Download className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             )}
 
@@ -318,20 +386,97 @@ export const ExecutiveReport: React.FC<ExecutiveReportProps> = ({ analysis, lang
                 <div className="bg-white p-6 rounded-2xl border border-blue-50 font-mono text-xs text-slate-700 leading-relaxed whitespace-pre-wrap max-h-[600px] overflow-y-auto custom-scrollbar">
                   {analysis.improvedCV.fullATS}
                 </div>
-                <button 
-                  onClick={() => {
-                    navigator.clipboard.writeText(analysis.improvedCV?.fullATS || '');
-                    alert(lang === 'es' ? 'Copiado al portapapeles' : 'Copied to clipboard');
-                  }}
-                  className="mt-6 w-full luxury-button-outline !py-3 gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
-                >
-                   {lang === 'es' ? "Copiar Formato ATS" : "Copy ATS Format"}
-                </button>
+                <div className="flex gap-2 mt-6">
+                  <button 
+                    onClick={() => {
+                      navigator.clipboard.writeText(analysis.improvedCV?.fullATS || '');
+                      alert(lang === 'es' ? 'Copiado al portapapeles' : 'Copied to clipboard');
+                    }}
+                    className="flex-1 luxury-button-outline !py-3 gap-2 border-blue-200 text-blue-600 hover:bg-blue-50"
+                  >
+                     {lang === 'es' ? "Copiar" : "Copy"}
+                  </button>
+                  <button 
+                    onClick={() => exportToWord("CV Formato ATS", analysis.improvedCV?.fullATS || '', `CV_ATS_${analysis.analysisName.replace(/\s+/g, '_')}`)}
+                    className="flex items-center justify-center p-3 border border-blue-200 text-blue-600 rounded-xl hover:bg-blue-50 transition-colors"
+                    title={lang === 'es' ? "Descargar Word" : "Download Word"}
+                  >
+                    <Download className="w-5 h-5" />
+                  </button>
+                </div>
               </div>
             )}
           </div>
         </div>
       )}
+      <AnimatePresence>
+        {selectedRole && (
+          <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-executive-navy/60 backdrop-blur-sm" onClick={() => setSelectedRole(null)}>
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white rounded-3xl max-w-2xl w-full p-8 shadow-2xl relative"
+              onClick={e => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 rounded-2xl bg-executive-navy text-executive-gold flex items-center justify-center shadow-lg">
+                    <Target className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-serif text-executive-navy">{selectedRole.role}</h3>
+                    <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">{lang === 'es' ? "Ángulo Recomendado" : "Recommended Angle"}</p>
+                  </div>
+                </div>
+                <button onClick={() => setSelectedRole(null)} className="p-2 hover:bg-slate-100 rounded-full text-slate-400 transition-colors">
+                   <ChevronDown className="w-6 h-6 rotate-180" />
+                </button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="bg-slate-50 p-6 rounded-2xl border border-slate-100 italic text-executive-navy leading-relaxed">
+                  "{selectedRole.recommendation}"
+                </div>
+                
+                <div className="grid grid-cols-2 gap-6">
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                       <CheckCircle2 className="w-3 h-3 text-emerald-500" /> Strengths for this position
+                    </h4>
+                    <ul className="space-y-2">
+                      {selectedRole.strengths.map(s => (
+                        <li key={s} className="text-sm text-slate-600 flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 mt-1.5 shrink-0" /> {s}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="space-y-3">
+                    <h4 className="text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                       <AlertTriangle className="w-3 h-3 text-amber-500" /> Strategic Gaps
+                    </h4>
+                    <ul className="space-y-2">
+                      {selectedRole.gaps.map(g => (
+                        <li key={g} className="text-sm text-slate-600 flex items-start gap-2">
+                          <div className="w-1.5 h-1.5 rounded-full bg-amber-500 mt-1.5 shrink-0" /> {g}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              <button 
+                onClick={() => setSelectedRole(null)}
+                className="mt-8 w-full luxury-button"
+              >
+                {lang === 'es' ? "Entendido, aplicar recomendación" : "Got it, apply recommendation"}
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

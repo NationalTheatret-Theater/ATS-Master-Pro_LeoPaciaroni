@@ -103,6 +103,19 @@ export default function App() {
     photoURL: null
   };
 
+  const [manualKey, setManualKey] = useState('');
+  const [isApiKeyModalOpen, setIsApiKeyModalOpen] = useState(false);
+
+  const handleSaveManualKey = () => {
+    if (manualKey.length >= 30) {
+      localStorage.setItem('MANUAL_GEMINI_API_KEY', manualKey);
+      alert(lang === 'es' ? 'Llave guardada. Por favor refresca la página.' : 'Key saved. Please refresh the page.');
+      window.location.reload();
+    } else {
+      alert(lang === 'es' ? 'La llave parece inválida.' : 'Key seems invalid.');
+    }
+  };
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       // If we have a real user, use it. Otherwise, use guest for open access.
@@ -219,18 +232,7 @@ export default function App() {
                     Motor Crítico: Llave inválida detectada.
                   </div>
                   <button 
-                    onClick={() => {
-                      const config = (window as any).__ENGINE_CONFIG__;
-                      const msg = "DIAGNÓSTICO DE CONEXIÓN:\n\n" +
-                        "1. Estado: OFFLINE\n" +
-                        "2. Llave elegida: " + (config?.source || 'NINGUNA') + "\n" +
-                        "3. Longitud: " + (config?.GEMINI_API_KEY?.length || 0) + "\n" +
-                        "4. Encontradas en Server:\n" + 
-                        (config?.envKeysDetected?.map((k: any) => `- ${k.name}: ${k.len} chars`).join('\n') || 'No se detectaron llaves') + "\n\n" +
-                        "SOLUCIÓN:\n" +
-                        "En el deploy de GitHub/Shared App, asegúrate de añadir 'GEMINI_API_KEY' en los Secrets del proyecto desplegado.";
-                      alert(msg);
-                    }}
+                    onClick={() => setIsApiKeyModalOpen(true)}
                     className="ml-auto flex items-center gap-1 px-2 py-1 bg-rose-500 text-white text-[9px] font-bold rounded hover:bg-rose-600 transition-colors"
                   >
                     <AlertCircle className="w-3 h-3" /> ARREGLAR AHORA
@@ -460,6 +462,59 @@ export default function App() {
           </AnimatePresence>
         </div>
       </main>
+      <AnimatePresence>
+        {isApiKeyModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-executive-navy/80 backdrop-blur-md">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl space-y-6"
+            >
+              <div className="text-center space-y-2">
+                <div className="w-16 h-16 bg-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8" />
+                </div>
+                <h3 className="text-2xl font-serif text-executive-navy">{lang === 'es' ? "Configurar Llave Gemini" : "Setup Gemini Key"}</h3>
+                <p className="text-sm text-slate-500">
+                  {lang === 'es' 
+                    ? "Si estás en una versión publicada (GitHub Pages), debes pegar tu API Key manualmente aquí para que el motor funcione."
+                    : "If you are on a published version (GitHub Pages), you must paste your API Key manually here for the engine to work."}
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Tu API Key (empieza por AIzaSy)</label>
+                <input 
+                  type="password"
+                  value={manualKey}
+                  onChange={(e) => setManualKey(e.target.value)}
+                  placeholder="AIzaSy..."
+                  className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-executive-gold outline-none transition-all font-mono text-sm"
+                />
+              </div>
+
+              <div className="flex gap-3 pt-2">
+                <button 
+                  onClick={() => setIsApiKeyModalOpen(false)}
+                  className="flex-1 px-6 py-3 rounded-xl border border-slate-200 text-slate-500 font-bold hover:bg-slate-50 transition-all"
+                >
+                  {lang === 'es' ? "Cancelar" : "Cancel"}
+                </button>
+                <button 
+                  onClick={handleSaveManualKey}
+                  className="flex-1 luxury-button"
+                >
+                  {lang === 'es' ? "Guardar Llave" : "Save Key"}
+                </button>
+              </div>
+              <p className="text-[10px] text-center text-slate-400">
+                {lang === 'es' ? "Tu llave se guardará localmente en este navegador." : "Your key will be saved locally in this browser."}
+              </p>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
