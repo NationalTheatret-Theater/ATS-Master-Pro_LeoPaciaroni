@@ -247,10 +247,13 @@ export const geminiService = {
        - originalText: El texto fuente del CV.
        - recommendedChange: Explicación de qué cambiar y por qué.
        - rewrittenText: El texto ya optimizado (aplicado directamente).
-    8. CV COMPLETO OPTIMIZADO (CRÍTICO): 
-       - fullATS: Genera el CV COMPLETO Y EXHAUSTIVO (Normalmente 2-3 páginas en contenido), desde el encabezado (datos de contacto) hasta el final (idiomas, cursos, voluntariado). Debe incluir TODAS las experiencias laborales con sus fechas, logros cuantificables, formación académica completa y habilidades técnicas. Usa un formato lineal, limpio y optimizado para pasar filtros ATS.
-       - fullExecutive: Genera el CV COMPLETO Y EXHAUSTIVO (2-3 páginas en contenido), con una narrativa DE ALTO IMPACTO EJECUTIVO. Enfócate en la propuesta de valor, métricas de negocio, liderazgo de escala y visión estratégica. Incluye toda la trayectoria profesional detallada.
-       - NOTA DE SENIORITY: Evalúa cuidadosamente la trayectoria para asignar los cargos sugeridos. Para perfiles menos senior, usa nomenclaturas como 'Jefe', 'Coordinador' o 'Subgerente'. Reserva 'Gerente', 'Director' o 'C-Level' solo para perfiles con trayectoria senior comprobada. No mezcles niveles jerárquicos.
+    8. CV COMPLETO OPTIMIZADO (REGLA DE ORO: CERO PÉRDIDA DE INFORMACIÓN): 
+       - Está TERMINANTEMENTE PROHIBIDO resumir, omitir o agrupar experiencias laborales. El resultado debe ser un documento extenso, completo y profesional. No uses formatos de "resumen" o "highlights".
+       - Si el CV original tiene 3 páginas, el optimizado DEBE tener al menos la misma extensión.
+       - fullATS (FORMATO TÉCNICO): Genera el CV COMPLETO Y EXHAUSTIVO (2-4 páginas). Debe incluir la CRONOLOGÍA COMPLETA. Cada puesto debe incluir: Empresa, Cargo, Fechas, Breve Contexto del Negocio, Responsabilidades Core y una lista detallada de LOGROS CUANTIFICABLES (mínimo 3-5 logros por cargo, usando métricas, porcentajes, US$). 
+       - fullExecutive (FORMATO LUXURY): Genera el CV COMPLETO Y EXHAUSTIVO con una narrativa de ALTO IMPACTO. Cada logro debe iniciar con VERBOS DE ACCIÓN (Lideró, Maximizó, Transformó).
+       - AMBAS VERSIONES DEBEN SER EL PRODUCTO FINAL LISTO PARA USAR, NO UN RESUMEN.
+       - NOTA DE SENIORITY: No infles cargos. Si la trayectoria es de nivel medio (Jefe, Subgerente), mantén esa jerarquía. Solo usa Gerente/C-Level si el perfil es senior comprobado.
     
     LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
     `;
@@ -398,8 +401,14 @@ export const geminiService = {
                       }
                     }
                   },
-                  fullATS: { type: Type.STRING },
-                  fullExecutive: { type: Type.STRING }
+                  fullATS: { 
+                    type: Type.STRING, 
+                    description: "CV COMPLETO EXHAUSTIVO (2-4 páginas). DEBE incluir 100% de la historia laboral, fechas y logros sin omitir nada. Formato ATS." 
+                  },
+                  fullExecutive: { 
+                    type: Type.STRING, 
+                    description: "CV COMPLETO EXHAUSTIVO (2-4 páginas). Narrativa de alto impacto ejecutivo, sin omisiones. Formato Premium." 
+                  }
                 }
               }
             }
