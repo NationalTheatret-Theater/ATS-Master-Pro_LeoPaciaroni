@@ -248,8 +248,9 @@ export const geminiService = {
        - recommendedChange: Explicación de qué cambiar y por qué.
        - rewrittenText: El texto ya optimizado (aplicado directamente).
     8. CV COMPLETO OPTIMIZADO (CRÍTICO): 
-       - fullATS: Genera el CV COMPLETO, desde el encabezado hasta el final, optimizado para pasar filtros ATS. Debe incluir todas las experiencias, educación y habilidades en un formato lineal y limpio.
-       - fullExecutive: Genera el CV COMPLETO, desde el encabezado hasta el final, con una narrativa DE ALTO IMPACTO EJECUTIVO, enfocada en resultados, métricas y liderazgo estratégico.
+       - fullATS: Genera el CV COMPLETO Y EXHAUSTIVO (Normalmente 2-3 páginas en contenido), desde el encabezado (datos de contacto) hasta el final (idiomas, cursos, voluntariado). Debe incluir TODAS las experiencias laborales con sus fechas, logros cuantificables, formación académica completa y habilidades técnicas. Usa un formato lineal, limpio y optimizado para pasar filtros ATS.
+       - fullExecutive: Genera el CV COMPLETO Y EXHAUSTIVO (2-3 páginas en contenido), con una narrativa DE ALTO IMPACTO EJECUTIVO. Enfócate en la propuesta de valor, métricas de negocio, liderazgo de escala y visión estratégica. Incluye toda la trayectoria profesional detallada.
+       - NOTA DE SENIORITY: Evalúa cuidadosamente la trayectoria para asignar los cargos sugeridos. Para perfiles menos senior, usa nomenclaturas como 'Jefe', 'Coordinador' o 'Subgerente'. Reserva 'Gerente', 'Director' o 'C-Level' solo para perfiles con trayectoria senior comprobada. No mezcles niveles jerárquicos.
     
     LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
     `;

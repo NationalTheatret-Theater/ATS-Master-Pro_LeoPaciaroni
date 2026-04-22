@@ -68,6 +68,24 @@ export const ClientDetail: React.FC<ClientDetailProps> = ({ user, client, lang, 
   const [selectedJobId, setSelectedJobId] = useState<string | null>(null);
   const [viewAnalysisId, setViewAnalysisId] = useState<string | null>(null);
 
+  const handleExportCV = async (analysis: Analysis, type: 'fullATS' | 'fullExecutive') => {
+    const cvContent = analysis.improvedCV?.[type];
+    if (!cvContent) {
+      alert(lang === 'es' ? "Este reporte no contiene una versión optimizada del CV." : "This report does not contain an optimized CV version.");
+      return;
+    }
+
+    const dateStr = analysis.createdAt?.toDate 
+      ? new Date(analysis.createdAt.toDate()).toISOString().split('T')[0] 
+      : new Date().toISOString().split('T')[0];
+    
+    const label = type === 'fullATS' ? 'ATS' : 'Ejecutivo';
+    const filename = `CV_${label}_${client.fullName.replace(/\s+/g, '_')}_${dateStr}`;
+    const title = type === 'fullATS' ? `CV Formato ATS - ${client.fullName}` : `CV Ejecutivo Premium - ${client.fullName}`;
+    
+    await exportToWord(title, cvContent, filename);
+  };
+
   const handleExportReport = async (analysis: Analysis) => {
     const content = `
 # OVERALL ENGINE SCORE: ${analysis.scores.overall}%
@@ -588,19 +606,35 @@ ${r.fitReason}`).join('\n\n')}
                           </div>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-2">
+                        <button 
+                          onClick={() => handleExportCV(analysis, 'fullATS')}
+                          className="luxury-button-outline !py-2 !px-3 gap-2 text-[10px] border-blue-200 text-blue-600 hover:bg-blue-50"
+                          title={lang === 'es' ? "Descargar CV ATS" : "Download ATS CV"}
+                        >
+                          <Download className="w-3 h-3" />
+                          ATS
+                        </button>
+                        <button 
+                          onClick={() => handleExportCV(analysis, 'fullExecutive')}
+                          className="luxury-button !py-2 !px-3 gap-2 text-[10px]"
+                          title={lang === 'es' ? "Descargar CV Ejecutivo" : "Download Executive CV"}
+                        >
+                          <Download className="w-3 h-3 text-executive-gold" />
+                          EXEC
+                        </button>
                         <button 
                           onClick={() => handleExportReport(analysis)}
                           className="luxury-button-outline !py-2 !px-5 gap-2 text-xs"
                         >
                           <Download className="w-3.5 h-3.5" />
-                          {lang === 'es' ? "Exportar Reporte" : "Export Report"}
+                          {lang === 'es' ? "Reporte" : "Report"}
                         </button>
                         <button 
                           onClick={() => setViewAnalysisId(analysis.id)}
                           className="luxury-button !py-2 !px-5 gap-2 text-xs"
                         >
-                          {lang === 'es' ? "Abrir Engine Report" : "Open Engine Report"} <ExternalLink className="w-3.5 h-3.5" />
+                          {lang === 'es' ? "Abrir" : "Open"} <ExternalLink className="w-3.5 h-3.5" />
                         </button>
                       </div>
                     </div>
