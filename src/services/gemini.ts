@@ -3,9 +3,10 @@ import { Language } from '../types';
 
 /**
  * Native Gemini Service (Frontend-first as per Skill Guidelines)
- * Using 'gemini-flash-latest' for the best balance of speed, accuracy, and quota limits.
  */
-const TEXT_MODEL = "gemini-flash-latest";
+const FLASH_MODEL = "gemini-flash-latest";
+const PRO_MODEL = "gemini-1.5-pro-latest";
+const TEXT_MODEL = PRO_MODEL; // Default to Pro for analysis quality
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
 const getFrontendApiKey = (): string => {
@@ -247,19 +248,17 @@ export const geminiService = {
        - originalText: El texto fuente del CV.
        - recommendedChange: Explicación de qué cambiar y por qué.
        - rewrittenText: El texto ya optimizado (aplicado directamente).
-    8. CV COMPLETO OPTIMIZADO (REGLA DE ORO: CERO PÉRDIDA DE INFORMACIÓN): 
-       - Está TERMINANTEMENTE PROHIBIDO resumir, omitir o agrupar experiencias laborales. El resultado debe ser un documento extenso, completo y profesional. No uses formatos de "resumen" o "highlights".
-       - Si el CV original tiene 3 páginas, el optimizado DEBE tener al menos la misma extensión.
-       - fullATS (FORMATO TÉCNICO): Genera el CV COMPLETO Y EXHAUSTIVO (2-4 páginas). Debe incluir la CRONOLOGÍA COMPLETA. Cada puesto debe incluir: Empresa, Cargo, Fechas, Breve Contexto del Negocio, Responsabilidades Core y una lista detallada de LOGROS CUANTIFICABLES (mínimo 3-5 logros por cargo, usando métricas, porcentajes, US$). 
-       - fullExecutive (FORMATO LUXURY): Genera el CV COMPLETO Y EXHAUSTIVO con una narrativa de ALTO IMPACTO. Cada logro debe iniciar con VERBOS DE ACCIÓN (Lideró, Maximizó, Transformó).
-       - AMBAS VERSIONES DEBEN SER EL PRODUCTO FINAL LISTO PARA USAR, NO UN RESUMEN.
-       - NOTA DE SENIORITY: No infles cargos. Si la trayectoria es de nivel medio (Jefe, Subgerente), mantén esa jerarquía. Solo usa Gerente/C-Level si el perfil es senior comprobado.
+    8. CV COMPLETO OPTIMIZADO (PRODUCTO FINAL - MÁXIMA EXTENSIÓN): 
+       - REGLA DE ORO: CERO PÉRDIDA DE INFORMACIÓN. No agrupes, no resumas, no resumas.
+       - fullATS: Genera un documento de 2-4 páginas con 100% de la historia laboral. Cada puesto DEBE incluir Empresa, Cargo, Fechas, Logros cuantificados (3-5 por cargo) y responsabilidades.
+       - fullExecutive: Genera un documento de 2-4 páginas con narrativa de ALTO IMPACTO, verbos de acción y propuesta estratégica. Debe incluir TODO el historial profesional.
+       - AMBAS versiones deben ser el producto final listo para descargar y usar. NO SON UN RESUMEN.
     
     LENGUAJE: El idioma por defecto es Español. Si el CV está en Español, todo el reporte DEBE estar en Español. Si el usuario selecciona Inglés, responde en Inglés.
     `;
 
     try {
-      console.log('[Executive Engine] Calling Gemini API...');
+      console.log('[Executive Engine] Calling Gemini API (PRO)...');
       
       // Use a race to implement a timeout for the API call
       const analysisPromise = withRetry(() => ai.models.generateContent({
@@ -270,6 +269,8 @@ export const geminiService = {
           Tus diagnósticos son deterministicos y quirúrgicos. No usas lenguaje genérico.
           TODA la respuesta debe estar en ${lang === 'es' ? 'Español' : 'Inglés'}.`,
           responseMimeType: "application/json",
+          maxOutputTokens: 8192,
+          temperature: 0.1,
           responseSchema: {
             type: Type.OBJECT,
             properties: {
@@ -403,11 +404,11 @@ export const geminiService = {
                   },
                   fullATS: { 
                     type: Type.STRING, 
-                    description: "CV COMPLETO EXHAUSTIVO (2-4 páginas). DEBE incluir 100% de la historia laboral, fechas y logros sin omitir nada. Formato ATS." 
+                    description: "CV COMPLETO EXHAUSTIVO (Mínimo 1500 palabras). Formato ATS Profesional." 
                   },
                   fullExecutive: { 
                     type: Type.STRING, 
-                    description: "CV COMPLETO EXHAUSTIVO (2-4 páginas). Narrativa de alto impacto ejecutivo, sin omisiones. Formato Premium." 
+                    description: "CV COMPLETO EXHAUSTIVO (Mínimo 1500 palabras). Narrativa Ejecutiva de Alto Impacto." 
                   }
                 }
               }
@@ -423,7 +424,8 @@ export const geminiService = {
       const response = await Promise.race([analysisPromise, timeoutPromise]) as any;
 
       console.log('[Executive Engine] API Success. Parsing response text...');
-      const result = JSON.parse(response.text);
+      const responseText = response.text;
+      const result = JSON.parse(responseText);
       console.log('[Executive Engine] Analysis Complete.', result);
       return result;
     } catch (e: any) {
@@ -440,11 +442,11 @@ export const geminiService = {
     const ai = getAiClient();
     const prompt = type === 'ATS_OPTIMIZED' 
       ? (lang === 'es' 
-          ? `Optimiza este CV para que sea 100% compatible con ATS (Greenhouse, iCIMS) y tenga un fuerte impacto ejecutivo. Mejora estructura, redacción y claridad sin inventar experiencia.` 
-          : `Optimize this resume for 100% ATS compatibility (Greenhouse, iCIMS) with strong executive impact. Improve structure, writing, and clarity without inventing experience.`)
+          ? `Optimiza este CV para que sea 100% compatible con ATS (Greenhouse, iCIMS) y tenga un fuerte impacto ejecutivo. Mejora estructura, redacción y claridad sin inventar experiencia. Genera un documento EXTENSO, no un resumen.` 
+          : `Optimize this resume for 100% ATS compatibility (Greenhouse, iCIMS) with strong executive impact. Improve structure, writing, and clarity without inventing experience. Generate an EXTENSIVE document, not a summary.`)
       : (lang === 'es'
-          ? `Adapta este CV específicamente para este aviso laboral. Prioriza lenguaje del aviso, logros relevantes y orden estratégico sin inventar información.`
-          : `Tailor this resume specifically for this job notice. Prioritize job language, relevant achievements, and strategic ordering without inventing information.`);
+          ? `Adapta este CV específicamente para este aviso laboral. Prioriza lenguaje del aviso, logros relevantes y orden estratégico sin inventar información. Mantén la extensión profesional (2-3 páginas).`
+          : `Tailor this resume specifically for this job notice. Prioritize job language, relevant achievements, and strategic ordering without inventing information. Maintain professional length (2-3 pages).`);
 
     const response = await withRetry(() => ai.models.generateContent({
       model: TEXT_MODEL,
@@ -457,11 +459,13 @@ export const geminiService = {
       ],
       config: {
         systemInstruction: lang === 'es' 
-          ? "Eres un redactor experto de CVs de nivel C-Level en Español. Escribes de forma sobria, ejecutiva y orientada a resultados. NUNCA inventas datos."
-          : "You are an expert C-Level CV writer in English. You write in a sober, executive, and results-oriented manner. NEVER invent data.",
+          ? "Eres un redactor experto de CVs de nivel C-Level en Español. Escribes de forma sobria, ejecutiva y orientada a resultados. NUNCA inventas datos. Tus CVs son extensos y detallados, no resúmenes. RECUERDA: Conserva el 100% de la historia laboral."
+          : "You are an expert C-Level CV writer in English. You write in a sober, executive, and results-oriented manner. NEVER invent data. Your resumes are extensive and detailed, not summaries. REMEMBER: Retain 100% of work history.",
+        maxOutputTokens: 8192,
+        temperature: 0.3
       }
     }));
 
-    return response.text;
+    return (response as any).text;
   }
 };
