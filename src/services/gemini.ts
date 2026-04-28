@@ -9,7 +9,7 @@ const PRO_MODEL = "gemini-3-flash-preview"; // Use Flash for now as Pro/3.1 is c
 const TEXT_MODEL = FLASH_MODEL;
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
-const getFrontendApiKey = (): string => {
+export const getFrontendApiKey = (): string => {
   // 0. Priority: Manual Local Storage (User override)
   const manualKey = localStorage.getItem('MANUAL_GEMINI_API_KEY');
   if (manualKey && manualKey.length >= 30) {
@@ -38,6 +38,12 @@ const getFrontendApiKey = (): string => {
   }
 
   return '';
+};
+
+export const isApiKeySetup = (): boolean => {
+  const key = getFrontendApiKey();
+  const isProjectId = key.startsWith('generative-language-') || key.includes(':');
+  return key.length >= 30 && !isProjectId;
 };
 
 // Lazy initialization of AI client to prevent startup crashes

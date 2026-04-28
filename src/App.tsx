@@ -19,6 +19,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { auth, signIn, logout } from './services/firebase';
+import { isApiKeySetup } from './services/gemini';
 import { AppState, Language, Client } from './types';
 import { cn } from './lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
@@ -219,14 +220,14 @@ export default function App() {
             <div className="flex flex-col gap-1">
               <div className={cn(
                 "flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-bold self-end",
-                (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30 
+                isApiKeySetup() 
                   ? "bg-emerald-50 text-emerald-600" 
                   : "bg-rose-50 text-rose-600"
               )}>
-                <div className={cn("w-1.5 h-1.5 rounded-full", ((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
-                {((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) ? "ONLINE" : "OFFLINE"}
+                <div className={cn("w-1.5 h-1.5 rounded-full", isApiKeySetup() ? "bg-emerald-500" : "bg-rose-500 animate-pulse")} />
+                {isApiKeySetup() ? "ONLINE" : "OFFLINE"}
               </div>
-              {!((window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY && (window as any).__ENGINE_CONFIG__?.GEMINI_API_KEY.length > 30) && (
+              {!isApiKeySetup() && (
                 <div className="space-y-2 text-right">
                   <div className="text-[8px] text-rose-400 font-bold uppercase leading-tight px-1">
                     Motor Crítico: Llave inválida detectada.
