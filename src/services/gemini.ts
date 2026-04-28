@@ -4,8 +4,8 @@ import { Language } from '../types';
 /**
  * Native Gemini Service (Frontend-first as per Skill Guidelines)
  */
-const FLASH_MODEL = "gemini-flash-latest";
-const PRO_MODEL = "gemini-1.5-pro-latest";
+const FLASH_MODEL = "models/gemini-1.5-flash";
+const PRO_MODEL = "models/gemini-1.5-pro";
 const TEXT_MODEL = PRO_MODEL; // Default to Pro for analysis quality
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
