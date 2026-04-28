@@ -4,9 +4,9 @@ import { Language } from '../types';
 /**
  * Native Gemini Service (Frontend-first as per Skill Guidelines)
  */
-const FLASH_MODEL = "gemini-3-flash-preview";
-const PRO_MODEL = "gemini-3-flash-preview"; // Use Flash for now as Pro/3.1 is consistently 404-ing
-const TEXT_MODEL = FLASH_MODEL;
+const FLASH_MODEL = "gemini-1.5-flash";
+const PRO_MODEL = "gemini-1.5-pro";
+const TEXT_MODEL = FLASH_MODEL; // Default to Flash for maximum stability and speed during demand spikes
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
 export const getFrontendApiKey = (): string => {
