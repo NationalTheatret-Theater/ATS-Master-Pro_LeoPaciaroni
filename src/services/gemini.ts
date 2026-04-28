@@ -4,8 +4,8 @@ import { Language } from '../types';
 /**
  * Native Gemini Service (Frontend-first as per Skill Guidelines)
  */
-const FLASH_MODEL = "gemini-1.5-flash";
-const PRO_MODEL = "gemini-1.5-pro";
+const FLASH_MODEL = "gemini-3-flash-preview";
+const PRO_MODEL = "gemini-3.1-pro-preview";
 const TEXT_MODEL = PRO_MODEL; // Default to Pro for analysis quality
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
@@ -42,8 +42,17 @@ export const getFrontendApiKey = (): string => {
 
 export const isApiKeySetup = (): boolean => {
   const key = getFrontendApiKey();
-  const isProjectId = key.startsWith('generative-language-') || key.includes(':');
-  return key.length >= 30 && !isProjectId;
+  if (!key) return false;
+  
+  // More permissive check: at least 20 chars (standard is ~39)
+  // Removed colon check as it might block legitimate Vertex keys used via AI Studio proxies
+  const looksValid = key.length >= 20;
+  
+  if (key.length > 5 && !looksValid) {
+    console.warn(`[Executive Engine] Key detected but looks too short (${key.length} chars).`);
+  }
+  
+  return looksValid;
 };
 
 // Lazy initialization of AI client to prevent startup crashes
@@ -79,8 +88,8 @@ const ensureApiKey = () => {
   }
 
   // 2. Case: Common pitfall - PII or Project ID pasted instead of Key
-  const isProjectId = currentKey.startsWith('generative-language-') || currentKey.includes(':');
-  if (isProjectId || (currentKey.length > 10 && currentKey.length < 38)) {
+  const isProjectId = currentKey.startsWith('generative-language-');
+  if (isProjectId || (currentKey.length > 10 && currentKey.length < 20)) {
     const errorMsg = `ERROR DE VALIDACIÓN: LLAVE NO VÁLIDA (${currentKey.length} caracteres)\n\n` +
       "⚠️ PARECE QUE HAS PEGADO UN 'PROJECT ID' EN LUGAR DE UNA 'API KEY'.\n\n" +
       "DIFERENCIAS VISUALES:\n" +
@@ -133,7 +142,7 @@ export const geminiService = {
     const ai = getAiClient();
     const response = await withRetry(() => ai.models.generateContent({
       model: FLASH_MODEL,
-      contents: { parts: [{ text }] },
+      contents: [{ parts: [{ text }] }],
       config: {
         systemInstruction: `Eres un experto Headhunter Senior con 20 años de experiencia en recruiting ejecutivo (C-Level). Tu objetivo es parsear CVs con precisión quirúrgica. 
         Analiza este CV profesional o ejecutivo. Extrae estructura, experiencia, fechas, cargos, logros, skills, seniority, alcance, liderazgo, industrias, educación, idiomas, brechas, consistencia de carrera y señales de posicionamiento ejecutivo. 
@@ -197,7 +206,7 @@ export const geminiService = {
     const ai = getAiClient();
     const response = await withRetry(() => ai.models.generateContent({
       model: FLASH_MODEL,
-      contents: { parts: [{ text }] },
+      contents: [{ parts: [{ text }] }],
       config: {
         systemInstruction: `Eres un estratega de talento experto en analizar 'Job Descriptions' para identificar el dolor real de negocio que busca resolver la empresa.
         Analiza este aviso laboral. Extrae cargo, seniority, requisitos, competencias, keywords ATS, años de experiencia, idiomas, conocimientos técnicos, tipo de empresa, alcance del rol y problema de negocio implícito. Clasifica requisitos en obligatorio, importante, deseable y accesorio.
@@ -283,7 +292,7 @@ export const geminiService = {
       // Use a race to implement a timeout for the API call
       const analysisPromise = withRetry(() => ai.models.generateContent({
         model: PRO_MODEL,
-        contents: { parts: [{ text: prompt }] },
+        contents: [{ parts: [{ text: prompt }] }],
         config: {
           systemInstruction: `Eres EXECUTIVE CV INTELLIGENCE ENGINE. Eres un experto en Outplacement y Executive Search Senior.
           Tus diagnósticos son deterministicos y quirúrgicos. No usas lenguaje genérico.
@@ -470,13 +479,13 @@ export const geminiService = {
 
     const response = await withRetry(() => ai.models.generateContent({
       model: FLASH_MODEL,
-      contents: {
+      contents: [{
         parts: [
           { text: `CV Original: ${resumeRaw}` },
           { text: jobRaw ? `Job Description: ${jobRaw}` : "" },
           { text: prompt }
         ]
-      },
+      }],
       config: {
         systemInstruction: lang === 'es' 
           ? "Eres un redactor experto de CVs de nivel C-Level en Español. Escribes de forma sobria, ejecutiva y orientada a resultados. NUNCA inventas datos. Tus CVs son extensos y detallados, no resúmenes. RECUERDA: Conserva el 100% de la historia laboral."
