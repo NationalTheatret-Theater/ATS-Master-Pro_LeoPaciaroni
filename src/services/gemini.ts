@@ -4,9 +4,9 @@ import { Language } from '../types';
 /**
  * Native Gemini Service (Frontend-first as per Skill Guidelines)
  */
-const FLASH_MODEL = "models/gemini-1.5-flash";
-const PRO_MODEL = "models/gemini-1.5-pro";
-const TEXT_MODEL = PRO_MODEL; // Default to Pro for analysis quality
+const FLASH_MODEL = "gemini-3-flash-preview";
+const PRO_MODEL = "gemini-3-flash-preview"; // Use Flash for now as Pro/3.1 is consistently 404-ing
+const TEXT_MODEL = FLASH_MODEL;
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
 const getFrontendApiKey = (): string => {
@@ -57,32 +57,37 @@ const getAiClient = () => {
 const ensureApiKey = () => {
   const currentKey = getFrontendApiKey();
   
+  // 1. Case: Key is missing or too short to be real
   if (!currentKey || currentKey.length < 10) {
-    const errorMsg = "LLAVE DE SEGURIDAD FALTANTE O BLOQUEADA.\n\n" +
-      "Google ha bloqueado la llave anterior por 'leakeo' (se compartió en el chat) o simplemente no has configurado una nueva.\n\n" +
-      "PASOS CRÍTICOS:\n" +
-      "1. Ve a https://aistudio.google.com/app/apikey y pulsa 'Create API key'.\n" +
-      "2. Copia la llave (empieza por 'AIzaSy' y tiene 39 caracteres).\n" +
-      "3. Pulsa el icono 🔑 (Secrets) arriba a la derecha en esta pantalla.\n" +
-      "4. Crea o actualiza 'LLAVE_EXPERTA' con el valor de 39 caracteres.\n" +
-      "5. Pulsa el botón 'RESTART SERVER' (>_) abajo a la derecha y haz F5.";
+    const errorMsg = "CONFIGURACIÓN REQUERIDA: LLAVE DE API FALTANTE\n\n" +
+      "Para que el motor de inteligencia pueda analizar tu CV, necesitas configurar una API Key de Google Gemini.\n\n" +
+      "PASOS PARA SOLUCIONARLO:\n" +
+      "1. REGISTRO: Ve a https://aistudio.google.com/app/apikey y pulsa el botón 'Create API key'.\n" +
+      "2. COPIADO: Copia el código que aparece (empieza por 'AIzaSy' y tiene exactamente 39 caracteres).\n" +
+      "3. CONFIGURACIÓN: En esta ventana de AI Studio, pulsa el icono de 'Configuración' (Settings) o el icono de llave 🔑 (Secrets).\n" +
+      "4. SECRETO: Crea un nuevo secreto llamado 'LLAVE_EXPERTA' y pega allí tu código.\n" +
+      "5. APLICAR: Pulsa el botón 'RESTART SERVER' en la consola inferior para activar la nueva configuración.";
     
     console.error(`[Executive Engine] ${errorMsg}`);
     throw new Error(errorMsg);
   }
 
-  // Extra check for short keys (most common user error)
-  if (currentKey.length > 10 && currentKey.length < 30) {
-    const errorMsg = `LLAVE DEMASIADO CORTA (${currentKey.length} caracteres).\n\n` +
-      "⚠️ ERROR DE COPIADO: Has pegado algo que NO es la llave correcta.\n\n" +
-      "GUÍA VISUAL:\n" +
-      "❌ LO QUE TIENES: 'generative-lan...' (Es un ID de proyecto)\n" +
-      "✅ LO QUE NECESITAS: 'AIzaSy' + 33 carácteres más (Total 39).\n\n" +
-      "Por favor, vuelve a https://aistudio.google.com/app/apikey y pulsa el botón azul 'COPY' que está en la columna 'API Key'.";
+  // 2. Case: Common pitfall - PII or Project ID pasted instead of Key
+  const isProjectId = currentKey.startsWith('generative-language-') || currentKey.includes(':');
+  if (isProjectId || (currentKey.length > 10 && currentKey.length < 38)) {
+    const errorMsg = `ERROR DE VALIDACIÓN: LLAVE NO VÁLIDA (${currentKey.length} caracteres)\n\n` +
+      "⚠️ PARECE QUE HAS PEGADO UN 'PROJECT ID' EN LUGAR DE UNA 'API KEY'.\n\n" +
+      "DIFERENCIAS VISUALES:\n" +
+      "❌ INCORRECTO: 'generative-language-xxxx' (Esto es un identificador interno).\n" +
+      "✅ CORRECTO: 'AIzaSy...' (Debe empezar por AIzaSy y ser un código alfanumérico).\n\n" +
+      "POR FAVOR:\n" +
+      "Vuelve a https://aistudio.google.com/app/apikey y asegúrate de copiar el valor de la columna 'API KEY', no el nombre del proyecto.";
     
     console.error(`[Executive Engine] ${errorMsg}`);
     throw new Error(errorMsg);
   }
+
+  // 3. Case: Key looks roughly correct but motor fails (handled by catch at call site)
 }
 
 // Helper to handle retries on quota errors
