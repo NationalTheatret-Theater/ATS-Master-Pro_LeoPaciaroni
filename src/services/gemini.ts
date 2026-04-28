@@ -6,7 +6,7 @@ import { Language } from '../types';
  */
 const FLASH_MODEL = "gemini-1.5-flash";
 const PRO_MODEL = "gemini-1.5-pro";
-const TEXT_MODEL = FLASH_MODEL; // Default to Flash for maximum stability and speed during demand spikes
+const TEXT_MODEL = PRO_MODEL; // Default to Pro for analysis quality
 
 // Robust API Key recovery for Frontend (Hybrid Strategy)
 export const getFrontendApiKey = (): string => {
@@ -111,6 +111,15 @@ const withRetry = async <T>(fn: () => Promise<T>, retries = 2): Promise<T> => {
     if (isQuotaError) {
       throw new Error("EL MOTOR ESTÁ SATURADO (Google Free Tier).\n\nPor favor, espera 30 segundos sin pulsar nada y vuelve a intentarlo. Esto pasa porque Google limita la velocidad en cuentas gratuitas.");
     }
+    
+    // Log detailed error for debugging if not quota
+    console.error(`[Executive Engine] API Error Details:`, {
+      message: error?.message,
+      status: error?.status,
+      code: error?.code,
+      details: error?.details || error
+    });
+    
     throw error;
   }
 };
@@ -123,8 +132,8 @@ export const geminiService = {
     ensureApiKey();
     const ai = getAiClient();
     const response = await withRetry(() => ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: "user", parts: [{ text }] }],
+      model: FLASH_MODEL,
+      contents: { parts: [{ text }] },
       config: {
         systemInstruction: `Eres un experto Headhunter Senior con 20 años de experiencia en recruiting ejecutivo (C-Level). Tu objetivo es parsear CVs con precisión quirúrgica. 
         Analiza este CV profesional o ejecutivo. Extrae estructura, experiencia, fechas, cargos, logros, skills, seniority, alcance, liderazgo, industrias, educación, idiomas, brechas, consistencia de carrera y señales de posicionamiento ejecutivo. 
@@ -187,8 +196,8 @@ export const geminiService = {
     ensureApiKey();
     const ai = getAiClient();
     const response = await withRetry(() => ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [{ role: "user", parts: [{ text }] }],
+      model: FLASH_MODEL,
+      contents: { parts: [{ text }] },
       config: {
         systemInstruction: `Eres un estratega de talento experto en analizar 'Job Descriptions' para identificar el dolor real de negocio que busca resolver la empresa.
         Analiza este aviso laboral. Extrae cargo, seniority, requisitos, competencias, keywords ATS, años de experiencia, idiomas, conocimientos técnicos, tipo de empresa, alcance del rol y problema de negocio implícito. Clasifica requisitos en obligatorio, importante, deseable y accesorio.
@@ -273,8 +282,8 @@ export const geminiService = {
       
       // Use a race to implement a timeout for the API call
       const analysisPromise = withRetry(() => ai.models.generateContent({
-        model: TEXT_MODEL,
-        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        model: PRO_MODEL,
+        contents: { parts: [{ text: prompt }] },
         config: {
           systemInstruction: `Eres EXECUTIVE CV INTELLIGENCE ENGINE. Eres un experto en Outplacement y Executive Search Senior.
           Tus diagnósticos son deterministicos y quirúrgicos. No usas lenguaje genérico.
@@ -429,7 +438,7 @@ export const geminiService = {
       }));
 
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error("TIEMPO DE ESPERA AGOTADO (Timeout).\n\nEl análisis está tardando más de lo normal debido a la alta carga del motor de Google. Por favor, intenta de nuevo.")), 45000)
+        setTimeout(() => reject(new Error("TIEMPO DE ESPERA AGOTADO (Timeout).\n\nEl análisis está tardando más de lo normal debido a la alta carga del motor de Google. Por favor, intenta de nuevo.")), 90000)
       );
 
       const response = await Promise.race([analysisPromise, timeoutPromise]) as any;
@@ -460,14 +469,14 @@ export const geminiService = {
           : `Tailor this resume specifically for this job notice. Prioritize job language, relevant achievements, and strategic ordering without inventing information. Maintain professional length (2-3 pages).`);
 
     const response = await withRetry(() => ai.models.generateContent({
-      model: TEXT_MODEL,
-      contents: [
-        { role: "user", parts: [
+      model: FLASH_MODEL,
+      contents: {
+        parts: [
           { text: `CV Original: ${resumeRaw}` },
-          { text: jobRaw ? `Job Description: ${jobRaw}` : '' },
+          { text: jobRaw ? `Job Description: ${jobRaw}` : "" },
           { text: prompt }
-        ]}
-      ],
+        ]
+      },
       config: {
         systemInstruction: lang === 'es' 
           ? "Eres un redactor experto de CVs de nivel C-Level en Español. Escribes de forma sobria, ejecutiva y orientada a resultados. NUNCA inventas datos. Tus CVs son extensos y detallados, no resúmenes. RECUERDA: Conserva el 100% de la historia laboral."
